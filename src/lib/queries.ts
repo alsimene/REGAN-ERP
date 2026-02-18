@@ -315,8 +315,9 @@ export async function getOrderByNumber(orderNumber: string) {
         id, order_number, order_date, status, payment_status, salesperson,
         subtotal, tax, total, notes, created_at,
         approved_by, approved_at, rejected_by, rejected_at, rejection_notes,
-        completed_at, completed_by,
-        clients ( id, name, contact_person, email, phone, address, city ),
+        completed_at, completed_by, supplier_id,
+        clients!orders_client_id_fkey ( id, name, contact_person, email, phone, address, city ),
+        supplier:clients!orders_supplier_id_fkey ( id, name, contact_person, email, phone, address, city ),
         client_warehouses ( id, name, address, city, contact_person, phone ),
         order_items (
           id, quantity, delivered_qty, classification, price_per_kg, weight_per_piece,
@@ -340,7 +341,7 @@ export async function getShipments() {
   const data = await unwrap(
     supabase
       .from("shipments")
-      .select("*, orders(order_number, clients(name))")
+      .select("*, orders(order_number, clients!orders_client_id_fkey(name))")
       .order("created_at", { ascending: false }),
     "getShipments",
   );
@@ -867,6 +868,7 @@ export async function createOrder(order: {
   notes: string;
   createdBy?: string;
   clientWarehouseId?: number | null;
+  supplierId?: number | null;
   items: {
     product_id: number;
     warehouse_id: number;
@@ -886,6 +888,7 @@ export async function createOrder(order: {
       p_items: order.items,
       p_created_by: order.createdBy ?? null,
       p_client_warehouse_id: order.clientWarehouseId ?? null,
+      p_supplier_id: order.supplierId ?? null,
     }),
     "createOrder",
   );

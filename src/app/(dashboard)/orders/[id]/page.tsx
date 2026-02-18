@@ -94,7 +94,17 @@ type OrderData = {
   rejection_notes: string | null;
   completed_at: string | null;
   completed_by: string | null;
+  supplier_id: number | null;
   clients: {
+    id: number;
+    name: string;
+    contact_person: string | null;
+    email: string | null;
+    phone: string | null;
+    address: string | null;
+    city: string | null;
+  } | null;
+  supplier: {
     id: number;
     name: string;
     contact_person: string | null;
@@ -346,7 +356,7 @@ export default function OrderDetailPage() {
           Order not found
         </p>
         <button
-          onClick={() => router.push("/dashboard/orders")}
+          onClick={() => router.push("/orders")}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-widest cursor-pointer"
           style={{
             fontFamily: "var(--font-body)",
@@ -362,6 +372,7 @@ export default function OrderDetailPage() {
   }
 
   const client = order.clients;
+  const supplier = order.supplier;
   const items = order.order_items ?? [];
   const status = order.status;
   const isTerminal = status === "completed" || status === "cancelled" || status === "rejected";
@@ -376,7 +387,7 @@ export default function OrderDetailPage() {
       {/* ── BACK BUTTON ── */}
       <div className="mb-3">
         <button
-          onClick={() => router.push("/dashboard/orders")}
+          onClick={() => router.push("/orders")}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-widest cursor-pointer group"
           style={{
             fontFamily: "var(--font-body)",
@@ -393,44 +404,189 @@ export default function OrderDetailPage() {
         </button>
       </div>
 
-      {/* ── HEADER STRIP ── */}
+      {/* ── PO DOCUMENT HEADER ── */}
       <div
         className="animate-fade-up"
         style={{
-          backgroundColor: "var(--btn-bg)",
-          color: "var(--btn-text)",
-          transition: "background-color 0.4s ease, color 0.4s ease",
-          boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+          backgroundColor: "var(--input-bg)",
+          transition: "background-color 0.4s ease",
         }}
       >
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
-          {[
-            { label: "Order Number", value: order.order_number },
-            { label: "Date", value: formatDate(order.order_date) },
-            { label: "Status", value: capitalize(order.status) },
-            { label: "Payment", value: capitalize(order.payment_status) },
-            { label: "Salesperson", value: order.salesperson || "\u2014" },
-          ].map((cell, idx) => (
-            <div key={cell.label} className="relative">
-              {idx > 0 && (
+        <div className="px-8 pt-8 pb-6">
+          {/* ── ROW 1: Supplier (left) + PURCHASE ORDER title (right) ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            {/* Left: Supplier info */}
+            {supplier ? (
+              <div style={{ fontFamily: "var(--font-body)" }}>
                 <div
-                  className="absolute left-0 top-3 bottom-3 w-px hidden sm:block"
-                  style={{ backgroundColor: "rgba(255,255,255,0.1)" }}
-                />
-              )}
-              <div className="px-6 py-4 text-center">
-                <div
-                  className="text-[10px] uppercase tracking-[0.2em] opacity-60 mb-1"
-                  style={{ fontFamily: "var(--font-body)" }}
+                  className="text-lg font-[family-name:var(--font-display)] uppercase tracking-wide mb-1"
+                  style={{ color: "var(--foreground)" }}
                 >
-                  {cell.label}
+                  {supplier.name}
                 </div>
-                <div className="text-sm font-[family-name:var(--font-display)] tracking-wide">
-                  {cell.value}
+                <div className="text-sm leading-relaxed" style={{ color: "var(--muted)" }}>
+                  {supplier.address && <>{supplier.address}<br /></>}
+                  {supplier.city && <>{supplier.city}<br /></>}
+                  {supplier.phone && <>Phone: {supplier.phone}<br /></>}
+                  {supplier.email && <>{supplier.email}</>}
                 </div>
+                {supplier.contact_person && (
+                  <div className="text-sm mt-1" style={{ color: "var(--muted)" }}>
+                    {supplier.contact_person}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div />
+            )}
+
+            {/* Right: PURCHASE ORDER title + PO details */}
+            <div>
+              <h1
+                className="text-3xl sm:text-4xl font-[family-name:var(--font-display)] uppercase tracking-wide text-right"
+                style={{ color: "var(--accent)" }}
+              >
+                Purchase Order
+              </h1>
+              <div className="h-[2px] mt-3 mb-4" style={{ backgroundColor: "var(--accent)" }} />
+              <table className="ml-auto" style={{ fontFamily: "var(--font-body)", borderCollapse: "collapse" }}>
+                <tbody>
+                  {[
+                    { label: "PO NUMBER:", value: order.order_number },
+                    { label: "ORDER DATE:", value: formatDate(order.order_date) },
+                    { label: "STATUS:", value: capitalize(order.status) },
+                    { label: "PAYMENT:", value: capitalize(order.payment_status) },
+                    { label: "SALESPERSON:", value: order.salesperson || "\u2014" },
+                  ].map((row) => (
+                    <tr key={row.label}>
+                      <td
+                        className="py-0.5 pr-6 text-right text-xs font-bold uppercase tracking-wider whitespace-nowrap"
+                        style={{ color: "var(--foreground)" }}
+                      >
+                        {row.label}
+                      </td>
+                      <td
+                        className="py-0.5 text-right text-sm"
+                        style={{ color: "var(--foreground)" }}
+                      >
+                        {row.value}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* ── ROW 2: Client (left) + Ship To (right) ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-8">
+            {/* Left: Client */}
+            <div style={{ border: "1px solid var(--border)" }}>
+              <div
+                className="px-4 py-2"
+                style={{ backgroundColor: "var(--btn-bg)", color: "var(--btn-text)" }}
+              >
+                <span
+                  className="text-sm font-bold uppercase tracking-wider"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  Client
+                </span>
+              </div>
+              <div
+                className="px-4 py-3 space-y-0.5"
+                style={{ backgroundColor: "var(--background)" }}
+              >
+                {client ? (
+                  <>
+                    <div className="text-sm font-medium" style={{ color: "var(--foreground)", fontFamily: "var(--font-body)" }}>
+                      {client.name}
+                    </div>
+                    {client.address && (
+                      <div className="text-sm" style={{ color: "var(--foreground)", fontFamily: "var(--font-body)" }}>
+                        {client.address}
+                      </div>
+                    )}
+                    {client.city && (
+                      <div className="text-sm" style={{ color: "var(--foreground)", fontFamily: "var(--font-body)" }}>
+                        {client.city}
+                      </div>
+                    )}
+                    {client.contact_person && (
+                      <div className="text-sm" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>
+                        Contact: {client.contact_person}
+                      </div>
+                    )}
+                    {client.phone && (
+                      <div className="text-sm" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>
+                        Phone: {client.phone}
+                      </div>
+                    )}
+                    {client.email && (
+                      <div className="text-sm" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>
+                        {client.email}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-sm" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>
+                    No client assigned
+                  </div>
+                )}
               </div>
             </div>
-          ))}
+
+            {/* Right: Ship To (client warehouse) */}
+            <div style={{ border: "1px solid var(--border)" }}>
+              <div
+                className="px-4 py-2"
+                style={{ backgroundColor: "var(--btn-bg)", color: "var(--btn-text)" }}
+              >
+                <span
+                  className="text-sm font-bold uppercase tracking-wider"
+                  style={{ fontFamily: "var(--font-display)" }}
+                >
+                  Ship to
+                </span>
+              </div>
+              <div
+                className="px-4 py-3 space-y-0.5"
+                style={{ backgroundColor: "var(--background)" }}
+              >
+                {order.client_warehouses ? (
+                  <>
+                    <div className="text-sm font-medium" style={{ color: "var(--foreground)", fontFamily: "var(--font-body)" }}>
+                      {order.client_warehouses.name}
+                    </div>
+                    {order.client_warehouses.address && (
+                      <div className="text-sm" style={{ color: "var(--foreground)", fontFamily: "var(--font-body)" }}>
+                        {order.client_warehouses.address}
+                      </div>
+                    )}
+                    {order.client_warehouses.city && (
+                      <div className="text-sm" style={{ color: "var(--foreground)", fontFamily: "var(--font-body)" }}>
+                        {order.client_warehouses.city}
+                      </div>
+                    )}
+                    {order.client_warehouses.contact_person && (
+                      <div className="text-sm" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>
+                        Contact: {order.client_warehouses.contact_person}
+                      </div>
+                    )}
+                    {order.client_warehouses.phone && (
+                      <div className="text-sm" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>
+                        Phone: {order.client_warehouses.phone}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="text-sm" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>
+                    No warehouse assigned
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -679,160 +835,6 @@ export default function OrderDetailPage() {
         </div>
       )}
 
-      {/* ── CLIENT CARD ── */}
-      {client && (
-        <div
-          className="animate-fade-up delay-200"
-          style={{
-            backgroundColor: "var(--input-bg)",
-            borderBottom: "1px solid var(--border)",
-            transition: "background-color 0.4s ease",
-          }}
-        >
-          <div className="px-6 py-5">
-            <div
-              style={{
-                backgroundColor: "var(--background)",
-                border: "1px solid var(--border)",
-                transition:
-                  "background-color 0.3s ease, border-color 0.3s ease",
-              }}
-            >
-              <div
-                className="px-4 py-3 flex items-center gap-3"
-                style={{ borderBottom: "1px solid var(--border)" }}
-              >
-                <div
-                  className="w-8 h-8 flex items-center justify-center text-xs font-[family-name:var(--font-display)] uppercase shrink-0"
-                  style={{
-                    backgroundColor: "var(--btn-bg)",
-                    color: "var(--btn-text)",
-                  }}
-                >
-                  {client.name.charAt(0)}
-                </div>
-                <span
-                  className="text-sm font-medium text-foreground"
-                  style={{ fontFamily: "var(--font-body)" }}
-                >
-                  {client.name}
-                </span>
-              </div>
-
-              {(() => {
-                const details = [
-                  { label: "Contact", value: client.contact_person },
-                  { label: "Phone", value: client.phone },
-                  { label: "Email", value: client.email },
-                  { label: "City", value: client.city },
-                  { label: "Address", value: client.address },
-                ].filter((d) => d.value);
-                if (details.length === 0) return null;
-                return (
-                  <div className="px-4 py-3">
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-x-6 gap-y-2">
-                      {details.map((d) => (
-                        <div key={d.label}>
-                          <div
-                            className="text-[9px] uppercase tracking-[0.2em] mb-0.5"
-                            style={{
-                              color: "var(--muted)",
-                              fontFamily: "var(--font-body)",
-                            }}
-                          >
-                            {d.label}
-                          </div>
-                          <div
-                            className="text-sm text-foreground truncate"
-                            style={{ fontFamily: "var(--font-body)" }}
-                          >
-                            {d.value}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── SHIP TO WAREHOUSE ── */}
-      {order.client_warehouses && (
-        <div
-          className="animate-fade-up delay-250"
-          style={{
-            backgroundColor: "var(--input-bg)",
-            borderBottom: "1px solid var(--border)",
-            transition: "background-color 0.4s ease",
-          }}
-        >
-          <div className="px-6 py-4">
-            <div
-              style={{
-                backgroundColor: "var(--background)",
-                border: "1px solid var(--border)",
-                transition: "background-color 0.3s ease, border-color 0.3s ease",
-              }}
-            >
-              <div
-                className="px-4 py-3 flex items-center gap-3"
-                style={{ borderBottom: "1px solid var(--border)" }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--muted)" }}>
-                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
-                </svg>
-                <span
-                  className="text-[10px] uppercase tracking-[0.2em]"
-                  style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}
-                >
-                  Ship To
-                </span>
-                <span
-                  className="text-sm font-medium text-foreground"
-                  style={{ fontFamily: "var(--font-body)" }}
-                >
-                  {order.client_warehouses.name}
-                </span>
-              </div>
-              {(() => {
-                const wh = order.client_warehouses!;
-                const details = [
-                  { label: "Address", value: wh.address },
-                  { label: "City", value: wh.city },
-                  { label: "Contact", value: wh.contact_person },
-                  { label: "Phone", value: wh.phone },
-                ].filter((d) => d.value);
-                if (details.length === 0) return null;
-                return (
-                  <div className="px-4 py-3">
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-2">
-                      {details.map((d) => (
-                        <div key={d.label}>
-                          <div
-                            className="text-[9px] uppercase tracking-[0.2em] mb-0.5"
-                            style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}
-                          >
-                            {d.label}
-                          </div>
-                          <div
-                            className="text-sm text-foreground truncate"
-                            style={{ fontFamily: "var(--font-body)" }}
-                          >
-                            {d.value}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                );
-              })()}
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── LINE ITEMS TABLE ── */}
       <div

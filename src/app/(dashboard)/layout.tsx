@@ -69,6 +69,11 @@ const icons = {
       <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
     </svg>
   ),
+  chevron: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  ),
 };
 
 /* ── rivet component ── */
@@ -87,32 +92,46 @@ function Rivet({ className = "" }: { className?: string }) {
 }
 
 /* ── navigation items ── */
-const mainNavItems = [
+type NavItem = { label: string; icon: React.ReactNode; href: string };
+type NavGroupItem = { label: string; icon: React.ReactNode; children: { label: string; href: string }[] };
+type NavEntry = NavItem | NavGroupItem;
+
+function isNavGroup(entry: NavEntry): entry is NavGroupItem {
+  return "children" in entry;
+}
+
+const mainNavItems: NavEntry[] = [
   { label: "Dashboard", icon: icons.dashboard, href: "/dashboard" },
-  { label: "Orders", icon: icons.orders, href: "/dashboard/orders" },
-  { label: "Inventory", icon: icons.inventory, href: "/dashboard/inventory" },
-  { label: "Inventory v2", icon: icons.inventory, href: "/dashboard/inventory2" },
+  { label: "Orders", icon: icons.orders, href: "/orders" },
+  {
+    label: "Inventory",
+    icon: icons.inventory,
+    children: [
+      { label: "Warehouse", href: "/inventory" },
+      { label: "Quick Search", href: "/inventory2" },
+    ],
+  },
 ];
 
 const managementNavItems = [
-  { label: "Sales", icon: icons.sales, href: "/dashboard/sales" },
-  { label: "Shipments", icon: icons.shipments, href: "/dashboard/shipments" },
-  { label: "Prices", icon: icons.prices, href: "/dashboard/prices" },
+  { label: "Sales", icon: icons.sales, href: "/sales" },
+  { label: "Shipments", icon: icons.shipments, href: "/shipments" },
+  { label: "Prices", icon: icons.prices, href: "/prices" },
 ];
 
 const pageMeta: Record<string, { title: string; subtitle: string }> = {
   "/dashboard": { title: "Dashboard", subtitle: "Production Overview" },
-  "/dashboard/sales": { title: "Sales", subtitle: "Revenue & Transactions" },
-  "/dashboard/inventory": { title: "Inventory", subtitle: "Stock Management" },
-  "/dashboard/inventory2": { title: "Inventory v2", subtitle: "Enhanced Stock Management" },
-  "/dashboard/prices": { title: "Market Prices", subtitle: "Price Management" },
-  "/dashboard/orders": { title: "Orders", subtitle: "Order Management" },
-  "/dashboard/orders/new": { title: "New Order", subtitle: "Create Purchase Order" },
-  "/dashboard/shipments": { title: "Shipments", subtitle: "Logistics & Delivery" },
-  "/dashboard/settings": { title: "Settings", subtitle: "Account & Preferences" },
+  "/sales": { title: "Sales", subtitle: "Revenue & Transactions" },
+  "/inventory": { title: "Warehouse", subtitle: "Stock Management" },
+  "/inventory2": { title: "Quick Search", subtitle: "Fast Product Lookup" },
+  "/prices": { title: "Market Prices", subtitle: "Price Management" },
+  "/orders": { title: "Orders", subtitle: "Order Management" },
+  "/orders/new": { title: "New Order", subtitle: "Create Purchase Order" },
+  "/shipments": { title: "Shipments", subtitle: "Logistics & Delivery" },
+  "/settings": { title: "Settings", subtitle: "Account & Preferences" },
 };
 
-function NavLink({ item, pathname }: { item: { label: string; icon: React.ReactNode; href: string }; pathname: string }) {
+function NavLink({ item, pathname, indent }: { item: { label: string; icon?: React.ReactNode; href: string }; pathname: string; indent?: boolean }) {
   const isActive =
     item.href === "/dashboard"
       ? pathname === "/dashboard"
@@ -121,12 +140,13 @@ function NavLink({ item, pathname }: { item: { label: string; icon: React.ReactN
   return (
     <Link
       href={item.href}
-      className="w-full flex items-center gap-3 px-3 py-2.5 text-sm uppercase tracking-wider cursor-pointer"
+      className={`w-full flex items-center gap-3 ${indent ? "pl-10 pr-3 py-2" : "px-3 py-2.5"} text-sm uppercase tracking-wider cursor-pointer`}
       style={{
         color: isActive ? "var(--panel-accent)" : "var(--panel-text-sub)",
         backgroundColor: isActive ? "var(--panel-content-bg)" : "transparent",
         borderLeft: isActive ? "2px solid var(--panel-accent)" : "2px solid transparent",
         fontFamily: "var(--font-body)",
+        fontSize: indent ? "11px" : undefined,
         transition: "color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease",
       }}
       onMouseEnter={(e) => {
@@ -145,6 +165,69 @@ function NavLink({ item, pathname }: { item: { label: string; icon: React.ReactN
       {item.icon}
       {item.label}
     </Link>
+  );
+}
+
+function NavGroup({ item, pathname }: { item: NavGroupItem; pathname: string }) {
+  const hasActiveChild = item.children.some(
+    (child) => pathname === child.href || pathname.startsWith(child.href + "/")
+  );
+  const [open, setOpen] = useState(hasActiveChild);
+
+  // Auto-expand when navigating to a child route
+  useEffect(() => {
+    if (hasActiveChild && !open) setOpen(true);
+  }, [hasActiveChild]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((prev) => !prev)}
+        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm uppercase tracking-wider cursor-pointer"
+        style={{
+          color: hasActiveChild ? "var(--panel-accent)" : "var(--panel-text-sub)",
+          backgroundColor: "transparent",
+          borderLeft: "2px solid transparent",
+          fontFamily: "var(--font-body)",
+          transition: "color 0.2s ease, background-color 0.2s ease",
+        }}
+        onMouseEnter={(e) => {
+          if (!hasActiveChild) {
+            e.currentTarget.style.color = "var(--panel-text)";
+            e.currentTarget.style.backgroundColor = "var(--panel-content-bg)";
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!hasActiveChild) {
+            e.currentTarget.style.color = "var(--panel-text-sub)";
+            e.currentTarget.style.backgroundColor = "transparent";
+          }
+        }}
+      >
+        {item.icon}
+        <span className="flex-1 text-left">{item.label}</span>
+        <span
+          className="shrink-0"
+          style={{
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+            transition: "transform 0.2s ease",
+          }}
+        >
+          {icons.chevron}
+        </span>
+      </button>
+      <div
+        style={{
+          maxHeight: open ? `${item.children.length * 40}px` : "0px",
+          overflow: "hidden",
+          transition: "max-height 0.25s ease",
+        }}
+      >
+        {item.children.map((child) => (
+          <NavLink key={child.href} item={child} pathname={pathname} indent />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -192,7 +275,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   const isDark = theme === "dark";
   const meta = pageMeta[pathname]
-    || (pathname.startsWith("/dashboard/orders/") && pathname !== "/dashboard/orders/new"
+    || (pathname.startsWith("/orders/") && pathname !== "/orders/new"
       ? { title: "Order Details", subtitle: decodeURIComponent(pathname.split("/").pop() ?? "") }
       : { title: "Dashboard", subtitle: "" });
 
@@ -266,9 +349,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </span>
           </div>
           <div className="space-y-0.5">
-            {mainNavItems.map((item) => (
-              <NavLink key={item.label} item={item} pathname={pathname} />
-            ))}
+            {mainNavItems.map((item) =>
+              isNavGroup(item) ? (
+                <NavGroup key={item.label} item={item} pathname={pathname} />
+              ) : (
+                <NavLink key={item.label} item={item} pathname={pathname} />
+              )
+            )}
           </div>
 
           {/* Divider */}
@@ -302,7 +389,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             </span>
           </div>
           <div className="space-y-0.5">
-            <NavLink item={{ label: "Settings", icon: icons.settings, href: "/dashboard/settings" }} pathname={pathname} />
+            <NavLink item={{ label: "Settings", icon: icons.settings, href: "/settings" }} pathname={pathname} />
           </div>
         </nav>
 
@@ -368,8 +455,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </p>
             </div>
             <button
-              onClick={async () => {
-                await signOut();
+              onClick={() => {
+                signOut();
                 router.push("/login");
               }}
               className="shrink-0 cursor-pointer p-1.5"

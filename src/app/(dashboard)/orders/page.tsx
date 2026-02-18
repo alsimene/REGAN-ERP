@@ -236,7 +236,7 @@ export default function OrdersPage() {
                 </div>
               )}
               <Link
-                href="/dashboard/orders/new"
+                href="/orders/new"
                 className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-wider"
                 style={{
                   backgroundColor: "var(--btn-bg)",
@@ -313,7 +313,7 @@ export default function OrdersPage() {
                           <td className="px-5 py-3 whitespace-nowrap">
                             <div className="flex gap-3">
                               <button
-                                onClick={() => router.push(`/dashboard/orders/new?draft=${draft.draftId}`)}
+                                onClick={() => router.push(`/orders/new?draft=${draft.draftId}`)}
                                 className="inline-flex items-center gap-1 text-xs uppercase tracking-wider cursor-pointer"
                                 style={{ color: "var(--foreground)", fontFamily: "var(--font-body)", transition: "opacity 0.2s ease" }}
                                 onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.7")}
@@ -387,7 +387,7 @@ export default function OrdersPage() {
                         key={order.id}
                         className="transition-colors cursor-pointer"
                         style={{ borderBottom: "1px solid var(--border)" }}
-                        onClick={() => router.push(`/dashboard/orders/${order.id}`)}
+                        onClick={() => router.push(`/orders/${order.id}`)}
                         onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--background)")}
                         onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
                       >

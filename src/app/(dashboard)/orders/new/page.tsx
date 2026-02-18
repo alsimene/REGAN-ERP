@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef, Suspense } from "react";
+import { useState, useEffect, useMemo, useRef, Suspense, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import {
   getClients,
   getProductsForOrder,
@@ -22,6 +24,7 @@ import {
 import ConfirmModal from "@/app/components/ConfirmModal";
 import LoadingOverlay from "@/app/components/LoadingOverlay";
 import { useAuth } from "@/app/context/AuthContext";
+import type { ExtractedPurchaseOrder, ExtractedLineItem } from "@/lib/poExtractionSchema";
 
 type Client = { id: number; name: string; contact_person: string | null; phone: string | null; email: string | null; address: string | null; city: string | null };
 type ClientWarehouse = { id: number; client_id: number; name: string; address: string | null; city: string | null; contact_person: string | null; phone: string | null; is_default: boolean };
@@ -83,6 +86,9 @@ function NewOrderForm() {
   const [clients, setClients] = useState<Client[]>([]);
   const [selectedClientId, setSelectedClientId] = useState<number | "">("");
 
+  // Supplier (defaults to Regan Industrial once clients load)
+  const [selectedSupplierId, setSelectedSupplierId] = useState<number | "">("");
+
   // Client Warehouses (Ship To)
   const [clientWarehouses, setClientWarehouses] = useState<ClientWarehouse[]>([]);
   const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | "">("");
@@ -122,6 +128,23 @@ function NewOrderForm() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
 
+  // Upload state
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadResult, setUploadResult] = useState<{
+    matched: number;
+    unmatched: { product_name: string; quantity: number; price: number; reason: string }[];
+  } | null>(null);
+
+  // AI extraction state
+  const [extracting, setExtracting] = useState(false);
+  const [extractionResult, setExtractionResult] = useState<{
+    matched: number;
+    unmatched: { product_name: string; quantity: number; price: number; reason: string }[];
+    clientMatched: boolean;
+    clientName: string | null;
+    warehouseHint: string | null;
+  } | null>(null);
+
   useEffect(() => {
     if (user?.user_metadata?.full_name) {
       setSalesperson(user.user_metadata.full_name);
@@ -160,9 +183,14 @@ function NewOrderForm() {
       getNextOrderNumber(),
       getMarketPrices(),
     ]).then(([c, pData, orderNum, prices]) => {
-      setClients(c as Client[]);
+      const clientList = c as Client[];
+      setClients(clientList);
       setProducts(pData.products);
       setOrderNumber(orderNum);
+
+      // Auto-select Regan Industrial as default supplier
+      const regan = clientList.find((cl) => cl.name.toLowerCase().includes("regan"));
+      if (regan) setSelectedSupplierId(regan.id);
 
       const priceMap: Record<number, number> = {};
       for (const p of prices) {
@@ -292,13 +320,14 @@ function NewOrderForm() {
   }, [selCategoryId, marketPrices]);
 
   // ── Reset cascade handlers ──
+  // When editing, preserve quantity & price so the user doesn't lose them
   function handleCategoryChange(val: number | "") {
     setSelCategoryId(val);
     setSelProductType("All");
     setSelSize("All");
     setSelThickness("All");
     setSelProductId("");
-    setSelQuantity("");
+    if (editingKey === null) setSelQuantity("");
   }
 
   function handleProductTypeChange(val: string) {
@@ -306,20 +335,20 @@ function NewOrderForm() {
     setSelSize("All");
     setSelThickness("All");
     setSelProductId("");
-    setSelQuantity("");
+    if (editingKey === null) setSelQuantity("");
   }
 
   function handleSizeChange(val: string) {
     setSelSize(val);
     setSelThickness("All");
     setSelProductId("");
-    setSelQuantity("");
+    if (editingKey === null) setSelQuantity("");
   }
 
   function handleThicknessChange(val: string) {
     setSelThickness(val);
     setSelProductId("");
-    setSelQuantity("");
+    if (editingKey === null) setSelQuantity("");
   }
 
   // Totals
@@ -344,6 +373,14 @@ function NewOrderForm() {
     setEditingKey(null);
   }
 
+  /** Format category with size & thickness, e.g. "Angle Bars (25x25 2.0mm)" */
+  function formatCategoryLabel(p: Product): string {
+    const parts: string[] = [];
+    if (p.size && p.size !== "—") parts.push(p.size.replace(/\s+/g, ""));
+    if (p.thickness && p.thickness !== "—") parts.push(`${p.thickness}mm`);
+    return parts.length > 0 ? `${p.category_name} (${parts.join(" ")})` : p.category_name;
+  }
+
   function handleAddItem() {
     if (!selProductId || !selQuantity || !selPrice) return;
     const product = products.find((p) => p.id === selProductId)!;
@@ -353,7 +390,7 @@ function NewOrderForm() {
       product_id: product.id,
       product_name: product.name,
       sku: product.sku,
-      category_name: product.category_name,
+      category_name: formatCategoryLabel(product),
       quantity: Number(selQuantity),
       price_per_kg: Number(selPrice),
       weight_per_piece: product.weight_per_piece,
@@ -394,6 +431,413 @@ function NewOrderForm() {
     setShowAddItemModal(false);
   }
 
+  // ── File upload handler ──
+  const processUploadedRows = useCallback(
+    (rawRows: Record<string, string>[]) => {
+      // Normalize headers
+      const normalize = (s: string) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+      const headerAliases: Record<string, string[]> = {
+        product_name: ["productname", "product", "name", "item", "itemname", "description"],
+        quantity: ["quantity", "qty", "pcs", "pieces", "count"],
+        price: ["price", "priceperkg", "pricepkg", "pricekg", "unitprice", "rate"],
+      };
+
+      function findColumn(headers: string[], target: string): string | null {
+        const aliases = headerAliases[target] ?? [];
+        for (const h of headers) {
+          const norm = normalize(h);
+          if (aliases.includes(norm)) return h;
+        }
+        return null;
+      }
+
+      if (rawRows.length === 0) {
+        setError("The uploaded file has no data rows.");
+        return;
+      }
+
+      const headers = Object.keys(rawRows[0]);
+      const nameCol = findColumn(headers, "product_name");
+      const qtyCol = findColumn(headers, "quantity");
+      const priceCol = findColumn(headers, "price");
+
+      if (!nameCol) {
+        setError(`Could not find a "Product Name" column. Found columns: ${headers.join(", ")}`);
+        return;
+      }
+      if (!qtyCol) {
+        setError(`Could not find a "Quantity" column. Found columns: ${headers.join(", ")}`);
+        return;
+      }
+
+      const matched: LineItem[] = [];
+      const unmatched: { product_name: string; quantity: number; price: number; reason: string }[] = [];
+      let nextKey = itemKey;
+
+      for (const row of rawRows) {
+        const rawName = (row[nameCol] ?? "").trim();
+        if (!rawName) continue;
+
+        const qty = parseInt(row[qtyCol] ?? "", 10);
+        const price = priceCol ? parseFloat(row[priceCol] ?? "") : 0;
+
+        if (!qty || qty <= 0) {
+          unmatched.push({ product_name: rawName, quantity: qty || 0, price: price || 0, reason: "Invalid quantity" });
+          continue;
+        }
+
+        // Match product by name / category + specs
+        const product = matchProduct(
+          rawName,
+          { product_name: rawName, quantity: qty, price: price || null, unit: null, size: null, thickness: null },
+          products,
+        );
+
+        if (!product) {
+          unmatched.push({ product_name: rawName, quantity: qty, price: price || 0, reason: "Product not found" });
+          continue;
+        }
+
+        // Resolve price: uploaded price → market price → 0
+        const resolvedPrice = (price && price > 0)
+          ? price
+          : (marketPrices[product.category_id] ?? 0);
+
+        matched.push({
+          key: nextKey++,
+          product_id: product.id,
+          product_name: product.name,
+          sku: product.sku,
+          category_name: formatCategoryLabel(product),
+          quantity: qty,
+          price_per_kg: resolvedPrice,
+          weight_per_piece: product.weight_per_piece,
+        });
+      }
+
+      if (matched.length > 0) {
+        setItems((prev) => [...prev, ...matched]);
+        setItemKey(nextKey);
+      }
+
+      setUploadResult({ matched: matched.length, unmatched });
+      setError("");
+    },
+    [products, marketPrices, itemKey]
+  );
+
+  // ── Helpers for spec comparison ──
+
+  /** Normalize size strings: remove spaces, convert × to x, remove quotes */
+  function normSize(s: string): string {
+    return s.toLowerCase().replace(/\s/g, "").replace(/×/g, "x").replace(/[""″'']/g, "").replace(/\\/g, "");
+  }
+
+  /** Extract just the number from a thickness string: "2.0mm" → 2, "5" → 5 */
+  function normThickness(s: string): number {
+    const n = parseFloat(s.replace(/[^0-9.]/g, ""));
+    return isNaN(n) ? -1 : n;
+  }
+
+  /** Parse a size pattern (e.g. "20x20", "75x40", "3/4\"", "2\"") from text */
+  function parseSizeFromText(text: string): string | null {
+    // Match patterns like 20x20, 75×40, 20 x 20
+    const dimMatch = text.match(/(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)/i);
+    if (dimMatch) return `${dimMatch[1]}x${dimMatch[2]}`;
+    // Match inch fractions like 3/4", 1/2", 1 1/2"
+    const inchMatch = text.match(/(\d+(?:\s+\d+)?\/\d+)\s*["″"]/);
+    if (inchMatch) return inchMatch[1] + '"';
+    // Match plain inches like 2"
+    const plainInch = text.match(/(\d+(?:\.\d+)?)\s*["″"]/);
+    if (plainInch) return plainInch[1] + '"';
+    return null;
+  }
+
+  /** Parse thickness from text — last standalone number that looks like a thickness */
+  function parseThicknessFromText(text: string, sizeStr: string | null): string | null {
+    // Remove the size portion so we don't confuse size numbers with thickness
+    let cleaned = text;
+    if (sizeStr) {
+      // Remove the size match and its surrounding context
+      cleaned = cleaned.replace(new RegExp(sizeStr.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), " ");
+    }
+    // Find numbers followed by optional "mm", but not part of a dimension (no x after)
+    const thkMatch = cleaned.match(/(\d+(?:\.\d+)?)\s*(?:mm)?\s*$/i)
+      ?? cleaned.match(/(\d+(?:\.\d+)?)\s*mm/i)
+      ?? cleaned.match(/(?:^|\s)(\d+(?:\.\d+)?)(?:\s|$)/);
+    if (thkMatch) return thkMatch[1];
+    return null;
+  }
+
+  /** Given multiple products (same name), narrow down by size/thickness from text */
+  function narrowBySpecs(
+    candidates: Product[],
+    text: string,
+    extractedItem: ExtractedLineItem,
+  ): Product | null {
+    const sizeFromItem = extractedItem.size || parseSizeFromText(text);
+    const thkFromItem = extractedItem.thickness || parseThicknessFromText(text, sizeFromItem);
+
+    const normSizeVal = sizeFromItem ? normSize(sizeFromItem) : null;
+    const normThkVal = thkFromItem ? normThickness(thkFromItem) : -1;
+
+    // Try: size + thickness
+    if (normSizeVal && normThkVal >= 0) {
+      const match = candidates.find((p) => {
+        const pSize = normSize(p.size);
+        const pThk = normThickness(p.thickness);
+        return pSize !== "—" && pSize === normSizeVal && pThk >= 0 && pThk === normThkVal;
+      });
+      if (match) return match;
+    }
+
+    // Try: size only
+    if (normSizeVal) {
+      const sizeMatches = candidates.filter((p) => normSize(p.size) === normSizeVal);
+      if (sizeMatches.length === 1) return sizeMatches[0];
+      // If multiple with same size but we have no thickness info, don't guess
+    }
+
+    // Try: thickness only
+    if (normThkVal >= 0) {
+      const thkMatches = candidates.filter((p) => normThickness(p.thickness) === normThkVal);
+      if (thkMatches.length === 1) return thkMatches[0];
+    }
+
+    // Can't narrow — return null (don't guess)
+    return null;
+  }
+
+  // ── Multi-strategy product matching for AI-extracted data ──
+  function matchProduct(
+    rawName: string,
+    extractedItem: ExtractedLineItem,
+    productList: Product[],
+  ): Product | null {
+    const nameLower = rawName.toLowerCase().trim();
+
+    // Strategy 1: Exact product name match
+    const exact = productList.find((p) => p.name.toLowerCase() === nameLower);
+    if (exact) return exact;
+
+    // Strategy 2: SKU match (e.g. "AB-003" in the text)
+    const skuMatch = productList.find(
+      (p) => nameLower.includes(p.sku.toLowerCase()) || p.sku.toLowerCase() === nameLower,
+    );
+    if (skuMatch) return skuMatch;
+
+    // Strategy 3: Partial product name match with spec narrowing
+    // Find ALL products whose name appears in the text (many share the same name)
+    const partialMatches = productList.filter(
+      (p) => p.name.toLowerCase().includes(nameLower) || nameLower.includes(p.name.toLowerCase()),
+    );
+    if (partialMatches.length === 1) return partialMatches[0];
+    if (partialMatches.length > 1) {
+      // Multiple products with same name — narrow by specs from text
+      const narrowed = narrowBySpecs(partialMatches, nameLower, extractedItem);
+      if (narrowed) return narrowed;
+      // If specs didn't narrow it, don't return the wrong one — fall through
+    }
+
+    // Strategy 4: Category + Size + Thickness matching
+    // Users often write "Angle Bars 20x20 2.0mm" where "Angle Bars" is the category
+    // and "Equal Angle" is the actual product name — we can't name-match, but
+    // we CAN match by category + specs.
+
+    // 4a: Find which category the text refers to
+    let matchedCatId: number | null = null;
+    for (const [catId, catName] of categories) {
+      const catLower = catName.toLowerCase();
+      const catSingular = catLower.replace(/s$/, "");
+      if (nameLower.includes(catLower) || nameLower.includes(catSingular)) {
+        matchedCatId = catId;
+        break;
+      }
+    }
+
+    if (matchedCatId !== null) {
+      const catProducts = productList.filter((p) => p.category_id === matchedCatId);
+
+      // 4b: Narrow category products by specs (reuse narrowBySpecs)
+      const catMatch = narrowBySpecs(catProducts, nameLower, extractedItem);
+      if (catMatch) return catMatch;
+
+      // 4c: If only one product in the category, return it
+      if (catProducts.length === 1) return catProducts[0];
+    }
+
+    // Strategy 5: Token-based scoring fallback (for completely unexpected formats)
+    const tokens = nameLower.split(/[\s,\-\/x×]+/).filter((t) => t.length > 2);
+    if (tokens.length >= 2) {
+      let bestMatch: Product | null = null;
+      let bestScore = 0;
+      for (const p of productList) {
+        const pName = p.name.toLowerCase();
+        const pCat = p.category_name.toLowerCase();
+        let score = 0;
+        for (const token of tokens) {
+          if (pName.includes(token)) score += 2;
+          if (pCat.includes(token)) score += 1;
+        }
+        if (score > bestScore && score >= 4) {
+          bestScore = score;
+          bestMatch = p;
+        }
+      }
+      if (bestMatch) return bestMatch;
+    }
+
+    return null;
+  }
+
+  // ── AI Document Extraction (PDF/Image) ──
+  const handleDocumentExtraction = useCallback(
+    async (file: File) => {
+      setExtracting(true);
+      setError("");
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+
+        const response = await fetch("/api/extract-po", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => null);
+          throw new Error(errData?.error ?? `Extraction failed (${response.status})`);
+        }
+
+        const result = await response.json();
+        if (!result.success || !result.data) {
+          throw new Error("No data extracted from document");
+        }
+
+        const extracted = result.data as ExtractedPurchaseOrder;
+
+        // Match client name
+        let clientMatched = false;
+        if (extracted.client_name && !selectedClientId) {
+          const extractedName = extracted.client_name.toLowerCase().trim();
+          const exactClient = clients.find((c) => c.name.toLowerCase().trim() === extractedName);
+          const partialClient = !exactClient
+            ? clients.find(
+                (c) => c.name.toLowerCase().includes(extractedName) || extractedName.includes(c.name.toLowerCase()),
+              )
+            : null;
+          const matchedClient = exactClient ?? partialClient;
+          if (matchedClient) {
+            setSelectedClientId(matchedClient.id);
+            clientMatched = true;
+          }
+        }
+
+        // Set PO date if extracted
+        if (extracted.po_date) {
+          const d = new Date(extracted.po_date);
+          if (!isNaN(d.getTime())) setOrderDate(extracted.po_date);
+        }
+
+        // Set notes if extracted and empty
+        if (extracted.notes && !notes) setNotes(extracted.notes);
+
+        // Match line items
+        const matched: LineItem[] = [];
+        const unmatched: { product_name: string; quantity: number; price: number; reason: string }[] = [];
+        let nextKey = itemKey;
+
+        for (const extractedItem of extracted.items ?? []) {
+          const rawName = (extractedItem.product_name ?? "").trim();
+          if (!rawName) continue;
+
+          const qty = extractedItem.quantity ?? 0;
+          const price = extractedItem.price ?? 0;
+
+          if (!qty || qty <= 0) {
+            unmatched.push({ product_name: rawName, quantity: qty, price, reason: "Invalid quantity" });
+            continue;
+          }
+
+          const product = matchProduct(rawName, extractedItem, products);
+          if (!product) {
+            unmatched.push({ product_name: rawName, quantity: qty, price, reason: "Product not found" });
+            continue;
+          }
+
+          const resolvedPrice = price > 0 ? price : (marketPrices[product.category_id] ?? 0);
+
+          matched.push({
+            key: nextKey++,
+            product_id: product.id,
+            product_name: product.name,
+            sku: product.sku,
+            category_name: formatCategoryLabel(product),
+            quantity: qty,
+            price_per_kg: resolvedPrice,
+            weight_per_piece: product.weight_per_piece,
+          });
+        }
+
+        if (matched.length > 0) {
+          setItems((prev) => [...prev, ...matched]);
+          setItemKey(nextKey);
+        }
+
+        setExtractionResult({
+          matched: matched.length,
+          unmatched,
+          clientMatched,
+          clientName: extracted.client_name ?? null,
+          warehouseHint: extracted.ship_to_address
+            ? `${extracted.ship_to_address}${extracted.ship_to_city ? `, ${extracted.ship_to_city}` : ""}`
+            : null,
+        });
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Document extraction failed";
+        setError(message);
+      } finally {
+        setExtracting(false);
+      }
+    },
+    [clients, products, marketPrices, itemKey, selectedClientId, notes],
+  );
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    // Reset input so same file can be re-selected
+    e.target.value = "";
+
+    const ext = file.name.split(".").pop()?.toLowerCase();
+
+    if (ext === "csv") {
+      Papa.parse<Record<string, string>>(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => processUploadedRows(results.data),
+        error: () => setError("Failed to parse CSV file."),
+      });
+    } else if (ext === "xlsx" || ext === "xls") {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        const data = evt.target?.result;
+        if (!data) return;
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json<Record<string, string>>(sheet, { defval: "" });
+        processUploadedRows(rows);
+      };
+      reader.onerror = () => setError("Failed to read Excel file.");
+      reader.readAsArrayBuffer(file);
+    } else if (["pdf", "png", "jpg", "jpeg", "webp", "tiff", "tif"].includes(ext ?? "")) {
+      handleDocumentExtraction(file);
+    } else {
+      setError("Unsupported file type. Please upload a CSV, Excel, PDF, or image file.");
+    }
+  }
+
   function handleRemoveItem(key: number) {
     setItems((prev) => prev.filter((i) => i.key !== key));
   }
@@ -427,7 +871,7 @@ function NewOrderForm() {
       itemKey,
     };
     saveDraft(draft);
-    router.push("/dashboard/orders");
+    router.push("/orders");
   }
 
   async function handleSubmit() {
@@ -448,6 +892,7 @@ function NewOrderForm() {
         notes: notes.trim(),
         createdBy: createdByName,
         clientWarehouseId: selectedWarehouseId ? (selectedWarehouseId as number) : null,
+        supplierId: selectedSupplierId ? (selectedSupplierId as number) : null,
         items: items.map((i) => ({
           product_id: i.product_id,
           warehouse_id: 0,
@@ -458,7 +903,7 @@ function NewOrderForm() {
         })),
       });
       if (resumeDraftId) deleteDraft(resumeDraftId);
-      router.push("/dashboard/orders");
+      router.push("/orders");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to create order";
       setError(msg);
@@ -469,11 +914,12 @@ function NewOrderForm() {
   return (
     <div className="space-y-0">
       <LoadingOverlay open={loading} message="Loading" />
+      <LoadingOverlay open={extracting} message="Extracting document data..." />
 
       {/* ── BACK BUTTON ── */}
       <div className="mb-3">
         <button
-          onClick={() => items.length > 0 ? setShowCancelModal(true) : router.push("/dashboard/orders")}
+          onClick={() => items.length > 0 ? setShowCancelModal(true) : router.push("/orders")}
           className="inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-widest cursor-pointer group"
           style={{ fontFamily: "var(--font-body)", color: "var(--muted)", transition: "color 0.2s ease" }}
           onMouseEnter={(e) => (e.currentTarget.style.color = "var(--foreground)")}
@@ -491,87 +937,131 @@ function NewOrderForm() {
         className="animate-fade-up"
         style={{ backgroundColor: "var(--input-bg)", borderBottom: "1px solid var(--border)", transition: "background-color 0.4s ease" }}
       >
-        {/* Row 1: Company info (left) + PO title & details (right) */}
-        <div className="flex items-start justify-between px-6 pt-6 pb-5">
-          {/* Company / Logo */}
-          <div className="flex items-start gap-3">
-            <img src="/regan-logo.png" alt="Regan" className="h-12 w-auto object-contain opacity-90" />
-            <div>
-              <div className="text-sm font-medium text-foreground" style={{ fontFamily: "var(--font-body)" }}>Regan Industrial Sales</div>
-              <div className="text-xs mt-0.5" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>Steel &amp; Metal Products</div>
-            </div>
-          </div>
-
-          {/* PO Title + Details */}
-          <div className="text-right">
-            <h1 className="text-2xl font-[family-name:var(--font-display)] tracking-wider" style={{ color: "var(--foreground)" }}>PURCHASE ORDER</h1>
-            <div className="mt-2 space-y-1">
-              <div className="flex items-center justify-end gap-3">
-                <span className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>PO No:</span>
-                <span className="text-sm font-[family-name:var(--font-display)] tracking-wide text-foreground min-w-[100px] text-right">{orderNumber}</span>
-              </div>
-              <div className="flex items-center justify-end gap-3">
-                <span className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>PO Date:</span>
-                <label className="relative cursor-pointer min-w-[100px] text-right">
-                  <span className="text-sm font-[family-name:var(--font-display)] tracking-wide text-foreground">
-                    {orderDate ? new Date(orderDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "\u2014"}
-                  </span>
-                  <input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer" style={{ width: "100%", height: "100%" }} />
-                </label>
-              </div>
-              <div className="flex items-center justify-end gap-3">
-                <span className="text-[10px] uppercase tracking-[0.15em]" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>Salesperson:</span>
-                <span className="text-sm text-foreground min-w-[100px] text-right" style={{ fontFamily: "var(--font-body)" }}>{salesperson || "\u2014"}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Row 2: Client card (left) + Ship To card (right) */}
-        <div className="px-6 pb-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* ── CLIENT CARD ── */}
-          <div style={{ border: "1px solid var(--border)" }}>
-            <div
-              className="px-4 py-2.5 text-xs uppercase tracking-[0.15em] font-medium"
-              style={{ backgroundColor: "var(--btn-bg)", color: "var(--btn-text)", fontFamily: "var(--font-body)" }}
-            >
-              Supplier/Vendor
-            </div>
-            <div className="px-4 py-3">
-              <select
-                value={selectedClientId}
-                onChange={(e) => setSelectedClientId(e.target.value ? Number(e.target.value) : "")}
-                className="w-full py-2 text-sm cursor-pointer outline-none px-2"
-                style={{
-                  color: "var(--foreground)",
-                  fontFamily: "var(--font-body)",
-                  backgroundColor: "var(--background)",
-                  border: "1px solid var(--border)",
-                }}
+        <div className="px-6 pt-6 pb-6 space-y-6">
+          {/* ── ROW 1: Supplier (left) + PO Title & Details (right) ── */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+            {/* Left: Supplier selection */}
+            <div style={{ border: "1px solid var(--border)" }}>
+              <div
+                className="px-4 py-2.5 text-xs uppercase tracking-[0.15em] font-medium"
+                style={{ backgroundColor: "var(--btn-bg)", color: "var(--btn-text)", fontFamily: "var(--font-body)" }}
               >
-                <option value="">Select a client...</option>
-                {clients.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}{c.city ? ` — ${c.city}` : ""}</option>
-                ))}
-              </select>
-              {selectedClientId && (() => {
-                const client = clients.find((c) => c.id === selectedClientId);
-                if (!client) return null;
-                return (
-                  <div className="mt-3 text-sm space-y-0.5 animate-fade-in" style={{ fontFamily: "var(--font-body)" }}>
-                    <div className="text-foreground font-medium">{client.name}</div>
-                    {client.contact_person && <div className="text-foreground">{client.contact_person}</div>}
-                    {client.address && <div style={{ color: "var(--muted)" }}>{client.address}</div>}
-                    {client.city && <div style={{ color: "var(--muted)" }}>{client.city}</div>}
-                    {client.phone && <div style={{ color: "var(--muted)" }}>Phone: {client.phone}</div>}
-                    {client.email && <div style={{ color: "var(--muted)" }}>{client.email}</div>}
-                  </div>
-                );
-              })()}
+                Supplier
+              </div>
+              <div className="px-4 py-3">
+                <select
+                  value={selectedSupplierId}
+                  onChange={(e) => setSelectedSupplierId(e.target.value ? Number(e.target.value) : "")}
+                  className="w-full py-2 text-sm cursor-pointer outline-none px-2"
+                  style={{
+                    color: "var(--foreground)",
+                    fontFamily: "var(--font-body)",
+                    backgroundColor: "var(--background)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <option value="">Select a supplier...</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}{c.city ? ` — ${c.city}` : ""}</option>
+                  ))}
+                </select>
+                {selectedSupplierId && (() => {
+                  const sup = clients.find((c) => c.id === selectedSupplierId);
+                  if (!sup) return null;
+                  return (
+                    <div className="mt-3 text-sm space-y-0.5 animate-fade-in" style={{ fontFamily: "var(--font-body)" }}>
+                      <div className="text-foreground font-medium">{sup.name}</div>
+                      {sup.contact_person && <div className="text-foreground">{sup.contact_person}</div>}
+                      {sup.address && <div style={{ color: "var(--muted)" }}>{sup.address}</div>}
+                      {sup.city && <div style={{ color: "var(--muted)" }}>{sup.city}</div>}
+                      {sup.phone && <div style={{ color: "var(--muted)" }}>Phone: {sup.phone}</div>}
+                      {sup.email && <div style={{ color: "var(--muted)" }}>{sup.email}</div>}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* Right: PURCHASE ORDER title + PO details */}
+            <div>
+              <h1
+                className="text-3xl sm:text-4xl font-[family-name:var(--font-display)] uppercase tracking-wide text-right"
+                style={{ color: "var(--accent)" }}
+              >
+                Purchase Order
+              </h1>
+              <div className="h-[2px] mt-3 mb-4" style={{ backgroundColor: "var(--accent)" }} />
+              <table className="ml-auto" style={{ fontFamily: "var(--font-body)", borderCollapse: "collapse" }}>
+                <tbody>
+                  <tr>
+                    <td className="py-0.5 pr-6 text-right text-xs font-bold uppercase tracking-wider whitespace-nowrap" style={{ color: "var(--foreground)" }}>PO NUMBER:</td>
+                    <td className="py-0.5 text-right text-sm font-[family-name:var(--font-display)] tracking-wide" style={{ color: "var(--foreground)" }}>{orderNumber}</td>
+                  </tr>
+                  <tr>
+                    <td className="py-0.5 pr-6 text-right text-xs font-bold uppercase tracking-wider whitespace-nowrap" style={{ color: "var(--foreground)" }}>PO DATE:</td>
+                    <td className="py-0.5 text-right text-sm" style={{ color: "var(--foreground)" }}>
+                      <label className="relative cursor-pointer">
+                        <span className="font-[family-name:var(--font-display)] tracking-wide">
+                          {orderDate ? new Date(orderDate + "T00:00:00").toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "\u2014"}
+                        </span>
+                        <input type="date" value={orderDate} onChange={(e) => setOrderDate(e.target.value)} className="absolute inset-0 opacity-0 cursor-pointer" style={{ width: "100%", height: "100%" }} />
+                      </label>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="py-0.5 pr-6 text-right text-xs font-bold uppercase tracking-wider whitespace-nowrap" style={{ color: "var(--foreground)" }}>SALESPERSON:</td>
+                    <td className="py-0.5 text-right text-sm" style={{ color: "var(--foreground)" }}>{salesperson || "\u2014"}</td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
 
-          {/* ── SHIP TO CARD ── */}
+          {/* ── ROW 2: Client (left) + Ship To (right) ── */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* ── CLIENT CARD ── */}
+            <div style={{ border: "1px solid var(--border)" }}>
+              <div
+                className="px-4 py-2.5 text-xs uppercase tracking-[0.15em] font-medium"
+                style={{ backgroundColor: "var(--btn-bg)", color: "var(--btn-text)", fontFamily: "var(--font-body)" }}
+              >
+                Client
+              </div>
+              <div className="px-4 py-3">
+                <select
+                  value={selectedClientId}
+                  onChange={(e) => setSelectedClientId(e.target.value ? Number(e.target.value) : "")}
+                  className="w-full py-2 text-sm cursor-pointer outline-none px-2"
+                  style={{
+                    color: "var(--foreground)",
+                    fontFamily: "var(--font-body)",
+                    backgroundColor: "var(--background)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <option value="">Select a client...</option>
+                  {clients.map((c) => (
+                    <option key={c.id} value={c.id}>{c.name}{c.city ? ` — ${c.city}` : ""}</option>
+                  ))}
+                </select>
+                {selectedClientId && (() => {
+                  const client = clients.find((c) => c.id === selectedClientId);
+                  if (!client) return null;
+                  return (
+                    <div className="mt-3 text-sm space-y-0.5 animate-fade-in" style={{ fontFamily: "var(--font-body)" }}>
+                      <div className="text-foreground font-medium">{client.name}</div>
+                      {client.contact_person && <div className="text-foreground">{client.contact_person}</div>}
+                      {client.address && <div style={{ color: "var(--muted)" }}>{client.address}</div>}
+                      {client.city && <div style={{ color: "var(--muted)" }}>{client.city}</div>}
+                      {client.phone && <div style={{ color: "var(--muted)" }}>Phone: {client.phone}</div>}
+                      {client.email && <div style={{ color: "var(--muted)" }}>{client.email}</div>}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+
+            {/* ── SHIP TO CARD ── */}
           <div style={{ border: "1px solid var(--border)" }}>
             <div
               className="px-4 py-2.5 text-xs uppercase tracking-[0.15em] font-medium"
@@ -736,6 +1226,7 @@ function NewOrderForm() {
               )}
             </div>
           </div>
+          </div>
         </div>
       </div>
 
@@ -744,8 +1235,8 @@ function NewOrderForm() {
         className="animate-fade-up delay-200"
         style={{ backgroundColor: "var(--input-bg)", transition: "background-color 0.4s ease" }}
       >
-        {/* Add Items Button */}
-        <div className="px-6 py-5">
+        {/* Add Items + Upload Buttons */}
+        <div className="px-6 py-5 flex items-center gap-3">
           <button
             onClick={() => setShowAddItemModal(true)}
             className="inline-flex items-center gap-2 px-5 py-2.5 text-sm uppercase tracking-wider cursor-pointer"
@@ -758,6 +1249,35 @@ function NewOrderForm() {
             </svg>
             Add Items
           </button>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={extracting}
+            className="inline-flex items-center gap-2 px-5 py-2.5 text-sm uppercase tracking-wider cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            style={{
+              backgroundColor: "transparent",
+              color: "var(--foreground)",
+              border: "1px solid var(--border)",
+              fontFamily: "var(--font-body)",
+              transition: "border-color 0.2s ease, color 0.2s ease",
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--foreground)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            Upload
+          </button>
+          <span className="text-[10px] uppercase tracking-wider" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>
+            CSV, Excel, PDF, or Image
+          </span>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".csv,.xlsx,.xls,.pdf,.png,.jpg,.jpeg,.webp,.tiff"
+            className="hidden"
+            onChange={handleFileUpload}
+          />
         </div>
 
         {/* Items table */}
@@ -953,7 +1473,7 @@ function NewOrderForm() {
           </button>
           <div className="flex-1" />
           <button
-            onClick={() => items.length > 0 ? setShowCancelModal(true) : router.push("/dashboard/orders")}
+            onClick={() => items.length > 0 ? setShowCancelModal(true) : router.push("/orders")}
             className="px-6 py-3 text-sm uppercase tracking-wider cursor-pointer"
             style={{ color: "var(--muted)", fontFamily: "var(--font-body)", transition: "color 0.2s ease" }}
             onMouseEnter={(e) => (e.currentTarget.style.color = "var(--accent)")}
@@ -971,7 +1491,7 @@ function NewOrderForm() {
         confirmLabel="Discard"
         cancelLabel="Go Back"
         variant="danger"
-        onConfirm={() => router.push("/dashboard/orders")}
+        onConfirm={() => router.push("/orders")}
         onCancel={() => setShowCancelModal(false)}
       />
 
@@ -1156,6 +1676,237 @@ function NewOrderForm() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* ── Upload Results Modal ── */}
+      {uploadResult && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(2px)" }}
+          onClick={() => setUploadResult(null)}
+        >
+          <div
+            className="w-full max-w-lg mx-4 animate-fade-up"
+            style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--border)", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
+              <span className="text-sm uppercase tracking-wider font-[family-name:var(--font-display)]" style={{ color: "var(--foreground)" }}>
+                Upload Results
+              </span>
+              <button
+                onClick={() => setUploadResult(null)}
+                className="p-1 cursor-pointer"
+                style={{ color: "var(--muted)", transition: "color 0.2s ease" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--foreground)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Summary */}
+            <div className="px-6 py-4 space-y-3">
+              <div className="flex items-center gap-3">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: uploadResult.matched > 0 ? "var(--class-c1)" : "var(--muted)" }}>
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span className="text-sm" style={{ color: "var(--foreground)", fontFamily: "var(--font-body)" }}>
+                  <strong>{uploadResult.matched}</strong> item{uploadResult.matched !== 1 ? "s" : ""} added successfully
+                </span>
+              </div>
+              {uploadResult.unmatched.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--accent)" }}>
+                    <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                  <span className="text-sm" style={{ color: "var(--accent)", fontFamily: "var(--font-body)" }}>
+                    <strong>{uploadResult.unmatched.length}</strong> row{uploadResult.unmatched.length !== 1 ? "s" : ""} could not be matched
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Unmatched rows table */}
+            {uploadResult.unmatched.length > 0 && (
+              <div className="px-6 pb-4">
+                <div style={{ border: "1px solid var(--border)", maxHeight: "240px", overflowY: "auto" }}>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                        {["Product Name", "Qty", "Price", "Reason"].map((h) => (
+                          <th
+                            key={h}
+                            className="px-4 py-2 text-left text-xs font-medium uppercase tracking-widest text-muted whitespace-nowrap"
+                            style={{ position: "sticky", top: 0, backgroundColor: "var(--input-bg)" }}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {uploadResult.unmatched.map((row, i) => (
+                        <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                          <td className="px-4 py-2 text-foreground whitespace-nowrap">{row.product_name}</td>
+                          <td className="px-4 py-2 text-muted">{row.quantity}</td>
+                          <td className="px-4 py-2 text-muted">{row.price > 0 ? `₱${row.price.toLocaleString()}` : "—"}</td>
+                          <td className="px-4 py-2 text-xs uppercase tracking-wider" style={{ color: "var(--accent)", fontFamily: "var(--font-body)" }}>{row.reason}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Close button */}
+            <div className="px-6 py-4" style={{ borderTop: "1px solid var(--border)" }}>
+              <button
+                onClick={() => setUploadResult(null)}
+                className="w-full py-2.5 text-sm uppercase tracking-wider cursor-pointer"
+                style={{ backgroundColor: "var(--btn-bg)", color: "var(--btn-text)", fontFamily: "var(--font-body)", transition: "background-color 0.2s ease" }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--btn-hover)")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--btn-bg)")}
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* ── Extraction Results Modal ── */}
+      {extractionResult && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(2px)" }}
+          onClick={() => setExtractionResult(null)}
+        >
+          <div
+            className="w-full max-w-lg mx-4 animate-fade-up"
+            style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--border)", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid var(--border)" }}>
+              <span className="text-sm uppercase tracking-wider font-[family-name:var(--font-display)]" style={{ color: "var(--foreground)" }}>
+                Document Extraction Results
+              </span>
+              <button
+                onClick={() => setExtractionResult(null)}
+                className="p-1 cursor-pointer"
+                style={{ color: "var(--muted)", transition: "color 0.2s ease" }}
+                onMouseEnter={(e) => (e.currentTarget.style.color = "var(--foreground)")}
+                onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Summary */}
+            <div className="px-6 py-4 space-y-3">
+              {/* Client match */}
+              {extractionResult.clientName && (
+                <div className="flex items-center gap-3">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: extractionResult.clientMatched ? "var(--class-c1)" : "var(--accent)" }}>
+                    {extractionResult.clientMatched ? (
+                      <polyline points="20 6 9 17 4 12" />
+                    ) : (
+                      <><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></>
+                    )}
+                  </svg>
+                  <span className="text-sm" style={{ color: "var(--foreground)", fontFamily: "var(--font-body)" }}>
+                    Client: <strong>{extractionResult.clientName}</strong>
+                    {extractionResult.clientMatched ? " \u2014 auto-selected" : " \u2014 not found in system"}
+                  </span>
+                </div>
+              )}
+
+              {/* Ship-to hint */}
+              {extractionResult.warehouseHint && (
+                <div className="flex items-center gap-3">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--muted)" }}>
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" />
+                  </svg>
+                  <span className="text-xs" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>
+                    Ship to: {extractionResult.warehouseHint}
+                  </span>
+                </div>
+              )}
+
+              {/* Items matched */}
+              <div className="flex items-center gap-3">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: extractionResult.matched > 0 ? "var(--class-c1)" : "var(--muted)" }}>
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+                <span className="text-sm" style={{ color: "var(--foreground)", fontFamily: "var(--font-body)" }}>
+                  <strong>{extractionResult.matched}</strong> item{extractionResult.matched !== 1 ? "s" : ""} added successfully
+                </span>
+              </div>
+              {extractionResult.unmatched.length > 0 && (
+                <div className="flex items-center gap-3">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--accent)" }}>
+                    <circle cx="12" cy="12" r="10" /><line x1="15" y1="9" x2="9" y2="15" /><line x1="9" y1="9" x2="15" y2="15" />
+                  </svg>
+                  <span className="text-sm" style={{ color: "var(--accent)", fontFamily: "var(--font-body)" }}>
+                    <strong>{extractionResult.unmatched.length}</strong> row{extractionResult.unmatched.length !== 1 ? "s" : ""} could not be matched
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Unmatched rows table */}
+            {extractionResult.unmatched.length > 0 && (
+              <div className="px-6 pb-4">
+                <div style={{ border: "1px solid var(--border)", maxHeight: "240px", overflowY: "auto" }}>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr style={{ borderBottom: "1px solid var(--border)" }}>
+                        {["Product Name", "Qty", "Price", "Reason"].map((h) => (
+                          <th
+                            key={h}
+                            className="px-4 py-2 text-left text-xs font-medium uppercase tracking-widest text-muted whitespace-nowrap"
+                            style={{ position: "sticky", top: 0, backgroundColor: "var(--input-bg)" }}
+                          >
+                            {h}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {extractionResult.unmatched.map((row, i) => (
+                        <tr key={i} style={{ borderBottom: "1px solid var(--border)" }}>
+                          <td className="px-4 py-2 text-foreground whitespace-nowrap">{row.product_name}</td>
+                          <td className="px-4 py-2 text-muted">{row.quantity}</td>
+                          <td className="px-4 py-2 text-muted">{row.price > 0 ? `\u20B1${row.price.toLocaleString()}` : "\u2014"}</td>
+                          <td className="px-4 py-2 text-xs uppercase tracking-wider" style={{ color: "var(--accent)", fontFamily: "var(--font-body)" }}>{row.reason}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+
+            {/* Close button */}
+            <div className="px-6 py-4" style={{ borderTop: "1px solid var(--border)" }}>
+              <button
+                onClick={() => setExtractionResult(null)}
+                className="w-full py-2.5 text-sm uppercase tracking-wider cursor-pointer"
+                style={{ backgroundColor: "var(--btn-bg)", color: "var(--btn-text)", fontFamily: "var(--font-body)", transition: "background-color 0.2s ease" }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "var(--btn-hover)")}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--btn-bg)")}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

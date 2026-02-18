@@ -33,10 +33,10 @@ const icons = {
 };
 
 const actions = [
-  { label: "New Order", desc: "Create a sales order", href: "/dashboard/orders/new", icon: icons.plus },
-  { label: "View Inventory", desc: "Browse stock levels", href: "/dashboard/inventory", icon: icons.box },
-  { label: "Sales Report", desc: "Revenue & analytics", href: "/dashboard/sales", icon: icons.chart },
-  { label: "Shipments", desc: "Track deliveries", href: "/dashboard/shipments", icon: icons.truck },
+  { label: "New Order", desc: "Create a sales order", href: "/orders/new", icon: icons.plus },
+  { label: "View Inventory", desc: "Browse stock levels", href: "/inventory", icon: icons.box },
+  { label: "Sales Report", desc: "Revenue & analytics", href: "/sales", icon: icons.chart },
+  { label: "Shipments", desc: "Track deliveries", href: "/shipments", icon: icons.truck },
 ];
 
 export default function QuickActions() {

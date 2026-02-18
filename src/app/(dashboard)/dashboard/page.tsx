@@ -142,7 +142,7 @@ export default async function DashboardPage() {
               Recent Orders
             </h3>
             <Link
-              href="/dashboard/orders"
+              href="/orders"
               className="text-xs text-accent uppercase tracking-wider hover:text-accent-hover transition-colors"
             >
               View All
@@ -171,7 +171,7 @@ export default async function DashboardPage() {
                   >
                     <td className="px-5 py-3 whitespace-nowrap">
                       <Link
-                        href={`/dashboard/orders/${order.id}`}
+                        href={`/orders/${order.id}`}
                         className="font-medium text-accent hover:text-accent-hover transition-colors"
                       >
                         {order.id}
@@ -262,7 +262,7 @@ export default async function DashboardPage() {
               Fast Moving Products
             </h3>
             <Link
-              href="/dashboard/inventory"
+              href="/inventory"
               className="text-xs text-accent uppercase tracking-wider hover:text-accent-hover transition-colors"
             >
               View All
@@ -330,7 +330,7 @@ export default async function DashboardPage() {
               Low Stock Alerts
             </h3>
             <Link
-              href="/dashboard/inventory"
+              href="/inventory"
               className="text-xs text-accent uppercase tracking-wider hover:text-accent-hover transition-colors"
             >
               View Inventory

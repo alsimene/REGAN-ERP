@@ -10,7 +10,16 @@
       "mcp__supabase__generate_typescript_types",
       "mcp__supabase__apply_migration",
       "mcp__supabase__get_advisors",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(npx next dev --turbopack=false)",
+      "Bash(npx next dev --help:*)",
+      "Bash(npx next dev:*)",
+      "Bash(npm run dev:*)",
+      "Bash(test:*)",
+      "Bash(npm install:*)",
+      "Bash(git mv:*)",
+      "WebFetch(domain:docs.landing.ai)",
+      "WebSearch"
     ]
   },
   "enableAllProjectMcpServers": true,
