@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regan - Dashboard</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .dashboard-wrap { display: flex; min-height: 100vh; margin-top: 42px; }
+    .main-content { flex: 1; min-width: 0; }
+    .content-area { padding: 24px 32px; }
+    .content-area > * + * { margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <!-- Template nav -->
+  <nav class="template-nav">
+    <span class="brand">Regan</span>
+    <a href="login.html">Login</a>
+    <a href="dashboard.html" class="active">Dashboard</a>
+    <a href="orders.html">Orders</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="components.html">Components</a>
+  </nav>
+
+  <div class="dashboard-wrap">
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" style="position: relative;">
+      <!-- Rivets -->
+      <div class="rivet" style="top: 12px; left: 12px;"></div>
+      <div class="rivet" style="top: 12px; right: 12px;"></div>
+      <div class="rivet" style="bottom: 12px; left: 12px;"></div>
+      <div class="rivet" style="bottom: 12px; right: 12px;"></div>
+      <div class="sidebar-steel-line"></div>
+
+      <!-- Logo -->
+      <div style="padding: 32px 24px 24px;">
+        <h1 class="sidebar-logo">Regan</h1>
+        <div class="sidebar-accent-line"></div>
+      </div>
+
+      <!-- Nav: Main -->
+      <nav style="flex: 1; padding: 0 12px; overflow-y: auto;">
+        <div class="mb-1"><span class="sidebar-section-label">Main</span></div>
+        <div class="space-y-1">
+          <a href="dashboard.html" class="nav-link active">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Dashboard
+          </a>
+          <a href="orders.html" class="nav-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Orders
+          </a>
+          <a href="inventory.html" class="nav-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+            Inventory
+          </a>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- Nav: Management -->
+        <div class="mb-1"><span class="sidebar-section-label">Management</span></div>
+        <div class="space-y-1">
+          <a href="#" class="nav-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Sales
+          </a>
+          <a href="#" class="nav-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            Shipments
+          </a>
+          <a href="#" class="nav-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            Prices
+          </a>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- Nav: System -->
+        <div class="mb-1"><span class="sidebar-section-label">System</span></div>
+        <div class="space-y-1">
+          <a href="#" class="nav-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Settings
+          </a>
+        </div>
+      </nav>
+
+      <!-- User profile -->
+      <div style="padding: 8px 12px 16px; border-top: 1px solid var(--steel-line);">
+        <!-- Theme toggle -->
+        <button class="nav-link" onclick="toggleTheme()" style="margin-bottom: 8px; border: none; background: none; cursor: pointer;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          Dark Mode
+        </button>
+
+        <!-- User card -->
+        <div class="user-card">
+          <div class="user-avatar">JD</div>
+          <div style="flex: 1; min-width: 0;">
+            <p class="user-name truncate">Juan Dela Cruz</p>
+            <p class="user-email truncate">juan@regan.com</p>
+          </div>
+          <button style="flex-shrink: 0; cursor: pointer; padding: 6px; background: none; border: none; color: var(--panel-text-sub); transition: color 0.2s ease;" onmouseover="this.style.color='var(--panel-accent)'" onmouseout="this.style.color='var(--panel-text-sub)'">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="main-content">
+      <!-- Top bar -->
+      <div class="top-bar">
+        <div>
+          <h2 class="top-bar-title">Dashboard</h2>
+          <p class="top-bar-subtitle">Production Overview</p>
+        </div>
+        <span class="top-bar-date">Feb 17, 2026</span>
+      </div>
+
+      <!-- Content -->
+      <div class="content-area">
+
+        <!-- ROW 1: KPI Cards -->
+        <div class="grid grid-cols-6 gap-4">
+          <div class="kpi-card animate-fade-up">
+            <div class="kpi-dot"></div>
+            <p class="kpi-label">Revenue</p>
+            <p class="kpi-value">&#8369;2,847,500</p>
+          </div>
+          <div class="kpi-card alert animate-fade-up delay-100">
+            <div class="kpi-dot"></div>
+            <p class="kpi-label">Pending Approval</p>
+            <p class="kpi-value">3</p>
+          </div>
+          <div class="kpi-card animate-fade-up delay-200">
+            <div class="kpi-dot"></div>
+            <p class="kpi-label">Active Orders</p>
+            <p class="kpi-value">12</p>
+          </div>
+          <div class="kpi-card alert animate-fade-up delay-300">
+            <div class="kpi-dot"></div>
+            <p class="kpi-label">Low Stock Alerts</p>
+            <p class="kpi-value">7</p>
+          </div>
+          <div class="kpi-card animate-fade-up delay-400">
+            <div class="kpi-dot"></div>
+            <p class="kpi-label">Avg Order Value</p>
+            <p class="kpi-value">&#8369;237,292</p>
+          </div>
+          <div class="kpi-card animate-fade-up delay-500">
+            <div class="kpi-dot"></div>
+            <p class="kpi-label">Active Clients</p>
+            <p class="kpi-value">8</p>
+          </div>
+        </div>
+
+        <!-- ROW 2: Recent Orders + Pipeline -->
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 24px;">
+          <!-- Recent Orders -->
+          <div class="panel animate-fade-up delay-400">
+            <div class="panel-header">
+              <h3 class="panel-title">Recent Orders</h3>
+              <a href="orders.html" class="panel-link">View All</a>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th><th>Client</th><th>Items</th><th>Weight</th><th>Total</th><th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><a href="#" style="color: var(--accent); font-weight: 500;">ORD-2026-0042</a></td>
+                  <td>Metro Steel Corp</td>
+                  <td>5 items</td>
+                  <td>12,450 kg</td>
+                  <td style="font-weight: 500;">&#8369;523,800</td>
+                  <td><span class="status status-pending">Pending Approval</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#" style="color: var(--accent); font-weight: 500;">ORD-2026-0041</a></td>
+                  <td>Luzon Builders</td>
+                  <td>3 items</td>
+                  <td>8,200 kg</td>
+                  <td style="font-weight: 500;">&#8369;345,600</td>
+                  <td><span class="status status-approved">Approved</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#" style="color: var(--accent); font-weight: 500;">ORD-2026-0040</a></td>
+                  <td>Pacific Ironworks</td>
+                  <td>8 items</td>
+                  <td>24,100 kg</td>
+                  <td style="font-weight: 500;">&#8369;1,012,500</td>
+                  <td><span class="status status-processing">Processing</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#" style="color: var(--accent); font-weight: 500;">ORD-2026-0039</a></td>
+                  <td>Southern Hardware</td>
+                  <td>2 items</td>
+                  <td>3,800 kg</td>
+                  <td style="font-weight: 500;">&#8369;159,600</td>
+                  <td><span class="status status-partial">Partial Delivered</span></td>
+                </tr>
+                <tr>
+                  <td><a href="#" style="color: var(--accent); font-weight: 500;">ORD-2026-0038</a></td>
+                  <td>Visayas Construction</td>
+                  <td>6 items</td>
+                  <td>18,500 kg</td>
+                  <td style="font-weight: 500;">&#8369;806,000</td>
+                  <td><span class="status status-completed">Completed</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Orders Pipeline -->
+          <div class="panel animate-fade-up delay-500">
+            <div class="panel-header">
+              <h3 class="panel-title">Orders Pipeline</h3>
+            </div>
+            <div style="padding: 16px 20px;" class="space-y-3">
+              <!-- Pipeline items -->
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="status status-pending" style="font-size: 12px;">Pending Approval</span>
+                  <span style="font-size: 12px; color: var(--muted); font-weight: 500;">3</span>
+                </div>
+                <div class="pipeline-bar-bg"><div class="pipeline-bar-fill" style="width: 25%; background-color: var(--draft);"></div></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="status status-approved" style="font-size: 12px;">Approved</span>
+                  <span style="font-size: 12px; color: var(--muted); font-weight: 500;">5</span>
+                </div>
+                <div class="pipeline-bar-bg"><div class="pipeline-bar-fill" style="width: 42%; background-color: var(--class-c1);"></div></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="status status-processing" style="font-size: 12px;">Processing</span>
+                  <span style="font-size: 12px; color: var(--muted); font-weight: 500;">8</span>
+                </div>
+                <div class="pipeline-bar-bg"><div class="pipeline-bar-fill" style="width: 67%; background-color: var(--muted);"></div></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="status status-partial" style="font-size: 12px;">Partial Delivered</span>
+                  <span style="font-size: 12px; color: var(--muted); font-weight: 500;">4</span>
+                </div>
+                <div class="pipeline-bar-bg"><div class="pipeline-bar-fill" style="width: 33%; background-color: var(--draft);"></div></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="status status-delivered" style="font-size: 12px;">Delivered</span>
+                  <span style="font-size: 12px; color: var(--muted); font-weight: 500;">12</span>
+                </div>
+                <div class="pipeline-bar-bg"><div class="pipeline-bar-fill" style="width: 100%; background-color: var(--foreground);"></div></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="status status-completed" style="font-size: 12px;">Completed</span>
+                  <span style="font-size: 12px; color: var(--muted); font-weight: 500;">9</span>
+                </div>
+                <div class="pipeline-bar-bg"><div class="pipeline-bar-fill" style="width: 75%; background-color: var(--class-c1);"></div></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="status status-cancelled" style="font-size: 12px;">Cancelled</span>
+                  <span style="font-size: 12px; color: var(--muted); font-weight: 500;">2</span>
+                </div>
+                <div class="pipeline-bar-bg"><div class="pipeline-bar-fill" style="width: 17%; background-color: var(--accent);"></div></div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span class="status status-rejected" style="font-size: 12px;">Rejected</span>
+                  <span style="font-size: 12px; color: var(--muted); font-weight: 500;">1</span>
+                </div>
+                <div class="pipeline-bar-bg"><div class="pipeline-bar-fill" style="width: 8%; background-color: var(--accent);"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROW 3: Fast Movers + Low Stock -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px;">
+          <!-- Fast Moving Products -->
+          <div class="panel animate-fade-up delay-600">
+            <div class="panel-header">
+              <h3 class="panel-title">Fast Moving Products</h3>
+              <a href="inventory.html" class="panel-link">View All</a>
+            </div>
+            <table class="data-table">
+              <thead>
+                <tr><th>Product</th><th>Category</th><th>Sold</th><th>Stock</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="font-size: 12px;">Angle Bar 40x40x6mm</td>
+                  <td style="font-size: 12px; color: var(--muted);">Angle Bars</td>
+                  <td style="font-size: 12px; font-weight: 500;">1,245</td>
+                  <td style="font-size: 12px; font-weight: 500;">328</td>
+                </tr>
+                <tr>
+                  <td style="font-size: 12px;">Deformed Bar 16mm</td>
+                  <td style="font-size: 12px; color: var(--muted);">Deformed Bars</td>
+                  <td style="font-size: 12px; font-weight: 500;">980</td>
+                  <td style="font-size: 12px; font-weight: 500;">156</td>
+                </tr>
+                <tr>
+                  <td style="font-size: 12px;">Flat Bar 50x6mm</td>
+                  <td style="font-size: 12px; color: var(--muted);">Flat Bars</td>
+                  <td style="font-size: 12px; font-weight: 500;">875</td>
+                  <td style="font-size: 12px; font-weight: 500;">412</td>
+                </tr>
+                <tr>
+                  <td style="font-size: 12px;">GI Pipe 1-1/2"</td>
+                  <td style="font-size: 12px; color: var(--muted);">Pipes</td>
+                  <td style="font-size: 12px; font-weight: 500;">720</td>
+                  <td style="font-size: 12px; font-weight: 500; color: var(--accent);">0</td>
+                </tr>
+                <tr>
+                  <td style="font-size: 12px;">C-Purlins 75x50x15</td>
+                  <td style="font-size: 12px; color: var(--muted);">Purlins</td>
+                  <td style="font-size: 12px; font-weight: 500;">685</td>
+                  <td style="font-size: 12px; font-weight: 500;">203</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Low Stock Alerts -->
+          <div class="panel animate-fade-up delay-700">
+            <div class="panel-header">
+              <h3 class="panel-title">Low Stock Alerts</h3>
+              <a href="inventory.html" class="panel-link">View Inventory</a>
+            </div>
+            <div style="padding: 16px 20px;" class="space-y-5">
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span style="font-size: 12px; color: var(--foreground); text-transform: uppercase; letter-spacing: 0.05em;">GI Pipe 1-1/2"</span>
+                  <span style="font-size: 12px; font-weight: 500; color: var(--accent);">0%</span>
+                </div>
+                <div class="pipeline-bar-bg"><div class="pipeline-bar-fill" style="width: 0%; background-color: var(--accent);"></div></div>
+                <div class="flex justify-between mt-1">
+                  <span style="font-size: 10px; color: var(--muted);">0 units</span>
+                  <span style="font-size: 10px; color: var(--muted);">500 cap</span>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span style="font-size: 12px; color: var(--foreground); text-transform: uppercase; letter-spacing: 0.05em;">Channel Bar 75x40</span>
+                  <span style="font-size: 12px; font-weight: 500; color: var(--accent);">5%</span>
+                </div>
+                <div class="pipeline-bar-bg"><div class="pipeline-bar-fill" style="width: 5%; background-color: var(--accent);"></div></div>
+                <div class="flex justify-between mt-1">
+                  <span style="font-size: 10px; color: var(--muted);">25 units</span>
+                  <span style="font-size: 10px; color: var(--muted);">500 cap</span>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span style="font-size: 12px; color: var(--foreground); text-transform: uppercase; letter-spacing: 0.05em;">Plate 4.5mm</span>
+                  <span style="font-size: 12px; font-weight: 500; color: var(--accent);">8%</span>
+                </div>
+                <div class="pipeline-bar-bg"><div class="pipeline-bar-fill" style="width: 8%; background-color: var(--accent);"></div></div>
+                <div class="flex justify-between mt-1">
+                  <span style="font-size: 10px; color: var(--muted);">40 units</span>
+                  <span style="font-size: 10px; color: var(--muted);">500 cap</span>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span style="font-size: 12px; color: var(--foreground); text-transform: uppercase; letter-spacing: 0.05em;">Wide Flange 200x100</span>
+                  <span style="font-size: 12px; font-weight: 500; color: var(--accent);">12%</span>
+                </div>
+                <div class="pipeline-bar-bg"><div class="pipeline-bar-fill" style="width: 12%; background-color: var(--accent);"></div></div>
+                <div class="flex justify-between mt-1">
+                  <span style="font-size: 10px; color: var(--muted);">60 units</span>
+                  <span style="font-size: 10px; color: var(--muted);">500 cap</span>
+                </div>
+              </div>
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <span style="font-size: 12px; color: var(--foreground); text-transform: uppercase; letter-spacing: 0.05em;">Deformed Bar 25mm</span>
+                  <span style="font-size: 12px; font-weight: 500; color: var(--accent);">15%</span>
+                </div>
+                <div class="pipeline-bar-bg"><div class="pipeline-bar-fill" style="width: 15%; background-color: var(--accent);"></div></div>
+                <div class="flex justify-between mt-1">
+                  <span style="font-size: 10px; color: var(--muted);">75 units</span>
+                  <span style="font-size: 10px; color: var(--muted);">500 cap</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ROW 4: Quick Actions -->
+        <div class="animate-fade-up delay-600">
+          <h3 class="panel-title mb-4">Quick Actions</h3>
+          <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px;">
+            <a href="orders.html" class="quick-action">
+              <span style="color: var(--accent);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              </span>
+              <div>
+                <p style="font-size: 14px; font-weight: 500; color: var(--foreground); text-transform: uppercase; letter-spacing: 0.05em;">New Order</p>
+                <p style="font-size: 12px; color: var(--muted); margin-top: 2px;">Create a sales order</p>
+              </div>
+            </a>
+            <a href="inventory.html" class="quick-action">
+              <span style="color: var(--accent);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              </span>
+              <div>
+                <p style="font-size: 14px; font-weight: 500; color: var(--foreground); text-transform: uppercase; letter-spacing: 0.05em;">View Inventory</p>
+                <p style="font-size: 12px; color: var(--muted); margin-top: 2px;">Browse stock levels</p>
+              </div>
+            </a>
+            <a href="#" class="quick-action">
+              <span style="color: var(--accent);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+              </span>
+              <div>
+                <p style="font-size: 14px; font-weight: 500; color: var(--foreground); text-transform: uppercase; letter-spacing: 0.05em;">Sales Report</p>
+                <p style="font-size: 12px; color: var(--muted); margin-top: 2px;">Revenue & analytics</p>
+              </div>
+            </a>
+            <a href="#" class="quick-action">
+              <span style="color: var(--accent);">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              </span>
+              <div>
+                <p style="font-size: 14px; font-weight: 500; color: var(--foreground); text-transform: uppercase; letter-spacing: 0.05em;">Shipments</p>
+                <p style="font-size: 12px; color: var(--muted); margin-top: 2px;">Track deliveries</p>
+              </div>
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      html.setAttribute('data-theme', current === 'dark' ? '' : 'dark');
+    }
+  </script>
+</body>
+</html>

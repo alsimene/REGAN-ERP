@@ -1,0 +1,199 @@
+@import "tailwindcss";
+
+/* ===== LIGHT THEME ===== */
+/* Warm white page, warm iron panel — high-contrast revision */
+:root {
+  --background: #f0ede8;
+  --foreground: #1a1714;
+  --accent: #8b3232;
+  --accent-hover: #6e2727;
+  --muted: #635d56;
+  --border: #c2bbb2;
+  --input-bg: #e5e0d8;
+  --error: #8b3232;
+  --btn-bg: #1a1714;
+  --btn-text: #f0ede8;
+  --btn-hover: #3a3530;
+
+  /* Panel: warm aged iron */
+  --panel-bg-1: #2a2522;
+  --panel-bg-2: #2a2522;
+  --panel-glow: rgba(139, 50, 50, 0.08);
+  --panel-text: #f0ebe6;
+  --panel-text-sub: rgba(240, 235, 230, 0.45);
+  --panel-accent: #c44a4a;
+  --rivet: rgba(255, 240, 220, 0.08);
+  --rivet-highlight: rgba(255, 240, 220, 0.18);
+  --beam: rgba(255, 240, 220, 0.03);
+  --beam-border: rgba(255, 240, 220, 0.06);
+  --spark: #c44a4a;
+  --ember: #8b3232;
+  --steel-line: rgba(255, 240, 220, 0.05);
+  --panel-content-bg: rgba(255, 240, 220, 0.04);
+  --panel-content-border: rgba(255, 240, 220, 0.08);
+
+  /* Draft */
+  --draft: #8b6d2e;
+  --draft-hover: #73591f;
+
+  /* Classification */
+  --class-c1: #2d6a2d;
+  --class-c2: #b5920a;
+  --class-c3: #8b3232;
+
+  /* Card header (PO cards) */
+  --card-header-bg: #1a1714;
+  --card-header-text: #f0ede8;
+
+  /* Inventory table */
+  --row-even: #e5e0d8;
+  --row-odd: #ebe7e0;
+  --row-hover: #d8d3ca;
+}
+
+/* ===== DARK THEME ===== */
+/* Deep black page, cold steel panel */
+[data-theme="dark"] {
+  --background: #0c0c0c;
+  --foreground: #eeece8;
+  --accent: #c44a4a;
+  --accent-hover: #a83c3c;
+  --muted: #6a6a6a;
+  --border: #1e1e1e;
+  --input-bg: #151515;
+  --error: #c44a4a;
+  --btn-bg: #eeece8;
+  --btn-text: #0c0c0c;
+  --btn-hover: #d6d4d0;
+
+  /* Panel: cold dark steel */
+  --panel-bg-1: #131518;
+  --panel-bg-2: #131518;
+  --panel-glow: rgba(196, 74, 74, 0.12);
+  --panel-text: #e8eaf0;
+  --panel-text-sub: rgba(232, 234, 240, 0.4);
+  --panel-accent: #c44a4a;
+  --rivet: rgba(200, 210, 230, 0.06);
+  --rivet-highlight: rgba(196, 74, 74, 0.2);
+  --beam: rgba(200, 210, 230, 0.03);
+  --beam-border: rgba(196, 74, 74, 0.07);
+  --spark: #d45555;
+  --ember: #c44a4a;
+  --steel-line: rgba(196, 74, 74, 0.05);
+  --panel-content-bg: rgba(196, 74, 74, 0.06);
+  --panel-content-border: rgba(196, 74, 74, 0.12);
+
+  /* Draft */
+  --draft: #c9952c;
+  --draft-hover: #b3831f;
+
+  /* Classification */
+  --class-c1: #4caf50;
+  --class-c2: #d4a017;
+  --class-c3: #c44a4a;
+
+  /* Card header (PO cards) */
+  --card-header-bg: #d9d5d0;
+  --card-header-text: #1a1714;
+
+  /* Inventory table */
+  --row-even: #151515;
+  --row-odd: #1a1a1a;
+  --row-hover: #252525;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-input-bg: var(--input-bg);
+  --color-error: var(--error);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), sans-serif;
+  transition: background-color 0.4s ease, color 0.4s ease;
+}
+
+select,
+select option {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* ===== ANIMATIONS ===== */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+@keyframes sparkFloat {
+  0% { opacity: 0; transform: translateY(0) scale(0); }
+  20% { opacity: 1; transform: translateY(-20px) scale(1); }
+  100% { opacity: 0; transform: translateY(-120px) scale(0.3); }
+}
+@keyframes emberPulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.8; }
+}
+@keyframes grainShift {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(-2px, 2px); }
+  50% { transform: translate(2px, -1px); }
+  75% { transform: translate(-1px, -2px); }
+}
+
+.animate-fade-up { animation: fadeUp 0.6s ease-out both; }
+.animate-fade-in { animation: fadeIn 0.8s ease-out both; }
+.animate-slide-left { animation: slideInLeft 0.7s ease-out both; }
+
+.delay-100 { animation-delay: 0.1s; }
+.delay-200 { animation-delay: 0.2s; }
+.delay-300 { animation-delay: 0.3s; }
+.delay-400 { animation-delay: 0.4s; }
+.delay-500 { animation-delay: 0.5s; }
+.delay-600 { animation-delay: 0.6s; }
+.delay-700 { animation-delay: 0.7s; }
+
+/* ===== INVENTORY TABLE ===== */
+.inv-table tbody tr:nth-child(odd) td { background-color: var(--row-odd); }
+.inv-table tbody tr:nth-child(even) td { background-color: var(--row-even); }
+.inv-table tbody tr:hover td { background-color: var(--row-hover); }
+.inv-table thead th { background-color: var(--input-bg); }
+
+/* Expanded detail sub-rows */
+.inv-table tbody tr.row-detail td {
+  background-color: var(--background) !important;
+  border-bottom: none;
+}
+.inv-table tbody tr.row-detail:last-of-type td {
+  border-bottom: 1px solid var(--border);
+}
+
+/* Inline capacity bar */
+.capacity-bar {
+  height: 4px;
+  border-radius: 2px;
+  background-color: var(--border);
+  overflow: hidden;
+  min-width: 48px;
+}
+.capacity-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}

@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Regan - Orders</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .dashboard-wrap { display: flex; min-height: 100vh; margin-top: 42px; }
+    .main-content { flex: 1; min-width: 0; }
+    .content-area { padding: 24px 32px; }
+    .content-area > * + * { margin-top: 24px; }
+  </style>
+</head>
+<body>
+  <!-- Template nav -->
+  <nav class="template-nav">
+    <span class="brand">Regan</span>
+    <a href="login.html">Login</a>
+    <a href="dashboard.html">Dashboard</a>
+    <a href="orders.html" class="active">Orders</a>
+    <a href="inventory.html">Inventory</a>
+    <a href="components.html">Components</a>
+  </nav>
+
+  <div class="dashboard-wrap">
+    <!-- Sidebar (simplified) -->
+    <aside class="sidebar" style="position: relative;">
+      <div class="rivet" style="top: 12px; left: 12px;"></div>
+      <div class="rivet" style="top: 12px; right: 12px;"></div>
+      <div class="rivet" style="bottom: 12px; left: 12px;"></div>
+      <div class="rivet" style="bottom: 12px; right: 12px;"></div>
+      <div class="sidebar-steel-line"></div>
+      <div style="padding: 32px 24px 24px;">
+        <h1 class="sidebar-logo">Regan</h1>
+        <div class="sidebar-accent-line"></div>
+      </div>
+      <nav style="flex: 1; padding: 0 12px; overflow-y: auto;">
+        <div class="mb-1"><span class="sidebar-section-label">Main</span></div>
+        <div class="space-y-1">
+          <a href="dashboard.html" class="nav-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Dashboard
+          </a>
+          <a href="orders.html" class="nav-link active">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Orders
+          </a>
+          <a href="inventory.html" class="nav-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            Inventory
+          </a>
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="mb-1"><span class="sidebar-section-label">Management</span></div>
+        <div class="space-y-1">
+          <a href="#" class="nav-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+            Sales
+          </a>
+          <a href="#" class="nav-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            Shipments
+          </a>
+          <a href="#" class="nav-link">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/></svg>
+            Prices
+          </a>
+        </div>
+      </nav>
+      <div style="padding: 8px 12px 16px; border-top: 1px solid var(--steel-line);">
+        <div class="user-card">
+          <div class="user-avatar">JD</div>
+          <div style="flex: 1; min-width: 0;">
+            <p class="user-name truncate">Juan Dela Cruz</p>
+            <p class="user-email truncate">juan@regan.com</p>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main content -->
+    <div class="main-content">
+      <div class="top-bar">
+        <div>
+          <h2 class="top-bar-title">Orders</h2>
+          <p class="top-bar-subtitle">Order Management</p>
+        </div>
+        <span class="top-bar-date">Feb 17, 2026</span>
+      </div>
+
+      <div class="content-area">
+
+        <!-- Stat Cards (clickable filters) -->
+        <div class="grid grid-cols-7 gap-4">
+          <div class="stat-card active animate-fade-up" onclick="setFilter(this, 'All')">
+            <div class="kpi-dot" style="background-color: var(--accent);"></div>
+            <p class="kpi-label">Total Orders</p>
+            <p class="kpi-value" style="font-size: 1.5rem;">44</p>
+          </div>
+          <div class="stat-card animate-fade-up delay-100" onclick="setFilter(this, 'Pending')">
+            <div class="kpi-dot"></div>
+            <p class="kpi-label">Pending Approval</p>
+            <p class="kpi-value" style="font-size: 1.5rem;">3</p>
+          </div>
+          <div class="stat-card animate-fade-up delay-200" onclick="setFilter(this, 'Approved')">
+            <div class="kpi-dot"></div>
+            <p class="kpi-label">Approved</p>
+            <p class="kpi-value" style="font-size: 1.5rem;">5</p>
+          </div>
+          <div class="stat-card animate-fade-up delay-200" onclick="setFilter(this, 'Processing')">
+            <div class="kpi-dot"></div>
+            <p class="kpi-label">Processing</p>
+            <p class="kpi-value" style="font-size: 1.5rem;">8</p>
+          </div>
+          <div class="stat-card animate-fade-up delay-300" onclick="setFilter(this, 'Delivered')">
+            <div class="kpi-dot"></div>
+            <p class="kpi-label">Delivered</p>
+            <p class="kpi-value" style="font-size: 1.5rem;">16</p>
+          </div>
+          <div class="stat-card animate-fade-up delay-300" onclick="setFilter(this, 'Completed')">
+            <div class="kpi-dot"></div>
+            <p class="kpi-label">Completed</p>
+            <p class="kpi-value" style="font-size: 1.5rem;">9</p>
+          </div>
+          <div class="stat-card animate-fade-up delay-400" onclick="setFilter(this, 'Drafts')">
+            <div class="kpi-dot"></div>
+            <p class="kpi-label">Drafts</p>
+            <p class="kpi-value" style="font-size: 1.5rem;">2</p>
+          </div>
+        </div>
+
+        <!-- Orders Table -->
+        <div class="panel animate-fade-up delay-400">
+          <!-- Header bar -->
+          <div class="panel-header">
+            <h3 class="panel-title">All Orders</h3>
+            <div class="flex items-center gap-3">
+              <!-- Search box -->
+              <div class="search-box">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--muted)" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" placeholder="Search orders...">
+              </div>
+              <!-- New Order button -->
+              <button class="btn btn-primary">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                New Order
+              </button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="padding-left: 12px; width: 40px;">#</th>
+                <th>Order ID</th><th>Date</th><th>Client</th><th>Product</th><th>Qty</th><th>Total</th><th>Status</th><th>Payment</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="cursor: pointer;">
+                <td style="padding-left: 12px; font-size: 12px; color: var(--muted);">1</td>
+                <td style="font-weight: 500;">ORD-2026-0042</td>
+                <td style="color: var(--muted);">Feb 17, 2026</td>
+                <td>Metro Steel Corp</td>
+                <td style="color: var(--muted);">5 items</td>
+                <td style="color: var(--muted);">12,450 kg</td>
+                <td style="font-weight: 500;">&#8369;523,800</td>
+                <td><span class="status status-pending">Pending Approval</span></td>
+                <td><span class="status" style="color: var(--accent);">Pending</span></td>
+              </tr>
+              <tr style="cursor: pointer;">
+                <td style="padding-left: 12px; font-size: 12px; color: var(--muted);">2</td>
+                <td style="font-weight: 500;">ORD-2026-0041</td>
+                <td style="color: var(--muted);">Feb 16, 2026</td>
+                <td>Luzon Builders</td>
+                <td style="color: var(--muted);">3 items</td>
+                <td style="color: var(--muted);">8,200 kg</td>
+                <td style="font-weight: 500;">&#8369;345,600</td>
+                <td><span class="status status-approved">Approved</span></td>
+                <td><span class="status" style="color: var(--accent);">Pending</span></td>
+              </tr>
+              <tr style="cursor: pointer;">
+                <td style="padding-left: 12px; font-size: 12px; color: var(--muted);">3</td>
+                <td style="font-weight: 500;">ORD-2026-0040</td>
+                <td style="color: var(--muted);">Feb 15, 2026</td>
+                <td>Pacific Ironworks</td>
+                <td style="color: var(--muted);">8 items</td>
+                <td style="color: var(--muted);">24,100 kg</td>
+                <td style="font-weight: 500;">&#8369;1,012,500</td>
+                <td><span class="status status-processing">Processing</span></td>
+                <td><span class="status" style="color: var(--accent);">Pending</span></td>
+              </tr>
+              <tr style="cursor: pointer;">
+                <td style="padding-left: 12px; font-size: 12px; color: var(--muted);">4</td>
+                <td style="font-weight: 500;">ORD-2026-0039</td>
+                <td style="color: var(--muted);">Feb 14, 2026</td>
+                <td>Southern Hardware</td>
+                <td style="color: var(--muted);">2 items</td>
+                <td style="color: var(--muted);">3,800 kg</td>
+                <td style="font-weight: 500;">&#8369;159,600</td>
+                <td><span class="status status-partial">Partial Delivered</span></td>
+                <td><span class="status" style="color: var(--class-c1);">Paid</span></td>
+              </tr>
+              <tr style="cursor: pointer;">
+                <td style="padding-left: 12px; font-size: 12px; color: var(--muted);">5</td>
+                <td style="font-weight: 500;">ORD-2026-0038</td>
+                <td style="color: var(--muted);">Feb 13, 2026</td>
+                <td>Visayas Construction</td>
+                <td style="color: var(--muted);">6 items</td>
+                <td style="color: var(--muted);">18,500 kg</td>
+                <td style="font-weight: 500;">&#8369;806,000</td>
+                <td><span class="status status-completed">Completed</span></td>
+                <td><span class="status" style="color: var(--class-c1);">Paid</span></td>
+              </tr>
+              <tr style="cursor: pointer;">
+                <td style="padding-left: 12px; font-size: 12px; color: var(--muted);">6</td>
+                <td style="font-weight: 500;">ORD-2026-0037</td>
+                <td style="color: var(--muted);">Feb 12, 2026</td>
+                <td>Manila Steel Traders</td>
+                <td style="color: var(--muted);">4 items</td>
+                <td style="color: var(--muted);">9,700 kg</td>
+                <td style="font-weight: 500;">&#8369;407,400</td>
+                <td><span class="status status-delivered">Delivered</span></td>
+                <td><span class="status" style="color: var(--accent);">Pending</span></td>
+              </tr>
+              <tr style="cursor: pointer;">
+                <td style="padding-left: 12px; font-size: 12px; color: var(--muted);">7</td>
+                <td style="font-weight: 500;">ORD-2026-0036</td>
+                <td style="color: var(--muted);">Feb 11, 2026</td>
+                <td>Cebu Metal Supply</td>
+                <td style="color: var(--muted);">1 item</td>
+                <td style="color: var(--muted);">2,100 kg</td>
+                <td style="font-weight: 500;">&#8369;88,200</td>
+                <td><span class="status status-cancelled">Cancelled</span></td>
+                <td><span class="status" style="color: var(--muted);">N/A</span></td>
+              </tr>
+              <tr style="cursor: pointer;">
+                <td style="padding-left: 12px; font-size: 12px; color: var(--muted);">8</td>
+                <td style="font-weight: 500;">ORD-2026-0035</td>
+                <td style="color: var(--muted);">Feb 10, 2026</td>
+                <td>Davao Iron Works</td>
+                <td style="color: var(--muted);">7 items</td>
+                <td style="color: var(--muted);">21,300 kg</td>
+                <td style="font-weight: 500;">&#8369;894,600</td>
+                <td><span class="status status-rejected">Rejected</span></td>
+                <td><span class="status" style="color: var(--muted);">N/A</span></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <!-- Footer with pagination -->
+          <div class="table-footer">
+            <span style="font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;">
+              Showing 8 of 44 orders
+            </span>
+            <div class="flex items-center gap-2">
+              <button class="pagination-btn" disabled>Prev</button>
+              <span style="font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em;">1 / 3</span>
+              <button class="pagination-btn">Next</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function setFilter(el, label) {
+      document.querySelectorAll('.stat-card').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+    }
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      html.setAttribute('data-theme', current === 'dark' ? '' : 'dark');
+    }
+  </script>
+</body>
+</html>
