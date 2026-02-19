@@ -5,9 +5,12 @@ import { unwrap, unwrapCount } from "./queryHelpers";
    Dashboard Page
    ────────────────────────────────────────── */
 
-export async function getDashboardStats() {
+export async function getDashboardStats(companyId?: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const stats = await unwrap(
-    supabase.rpc("get_dashboard_stats"),
+    (supabase.rpc as any)("get_dashboard_stats", {
+      p_company_id: companyId ?? null,
+    }),
     "getDashboardStats",
   );
 
@@ -26,9 +29,12 @@ export async function getDashboardStats() {
   ];
 }
 
-export async function getRawDashboardStats() {
+export async function getRawDashboardStats(companyId?: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const stats = await unwrap(
-    supabase.rpc("get_dashboard_stats"),
+    (supabase.rpc as any)("get_dashboard_stats", {
+      p_company_id: companyId ?? null,
+    }),
     "getRawDashboardStats",
   );
 
@@ -397,9 +403,14 @@ export function computeCarrierPerformance(shipments: { carrier: string; status: 
    Inventory Page
    ────────────────────────────────────────── */
 
-export async function getFastMovingItems(limit = 20, days = 30) {
+export async function getFastMovingItems(limit = 20, days = 30, companyId?: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = await unwrap(
-    supabase.rpc("get_fast_moving_items", { p_limit: limit, p_days: days }),
+    (supabase.rpc as any)("get_fast_moving_items", {
+      p_limit: limit,
+      p_days: days,
+      p_company_id: companyId ?? null,
+    }),
     "getFastMovingItems",
   );
 
@@ -429,10 +440,12 @@ export async function getCategories() {
   return (data ?? []).map((c) => c.name);
 }
 
-export async function getCategoriesWithCounts() {
+export async function getCategoriesWithCounts(companyId?: string) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = await unwrap(
-    (supabase.rpc as any)("get_categories_with_counts"),
+    (supabase.rpc as any)("get_categories_with_counts", {
+      p_company_id: companyId ?? null,
+    }),
     "getCategoriesWithCounts",
   );
 
@@ -440,22 +453,26 @@ export async function getCategoriesWithCounts() {
     .filter((c) => c.product_count > 0);
 }
 
-export async function searchProducts(query: string, limit = 50) {
-  const data = await unwrap(
-    supabase
-      .from("product_stock_summary")
-      .select("*")
-      .or(`sku.ilike.%${query}%,name.ilike.%${query}%`)
-      .order("sku")
-      .limit(limit),
-    "searchProducts",
-  );
+export async function searchProducts(query: string, limit = 50, companyId?: string) {
+  const view = companyId ? "company_stock_summary" : "product_stock_summary";
+  let q = supabase
+    .from(view)
+    .select("*")
+    .or(`sku.ilike.%${query}%,name.ilike.%${query}%`)
+    .order("sku")
+    .limit(limit);
 
-  return (data ?? []).map((r) => ({
-    productId: r.product_id!,
-    sku: r.sku ?? "",
-    name: r.name ?? "",
-    category: r.category ?? "",
+  if (companyId) {
+    q = q.eq("company_id", companyId);
+  }
+
+  const data = await unwrap(q, "searchProducts");
+
+  return (data ?? []).map((r: Record<string, unknown>) => ({
+    productId: (r.product_id as number)!,
+    sku: (r.sku as string) ?? "",
+    name: (r.name as string) ?? "",
+    category: (r.category as string) ?? "",
     c1: Number(r.total_c1 ?? 0),
     c2: Number(r.total_c2 ?? 0),
     c3: Number(r.total_c3 ?? 0),
@@ -464,7 +481,26 @@ export async function searchProducts(query: string, limit = 50) {
   }));
 }
 
-export async function getProductWarehouseDetail(productId: number) {
+export async function getProductWarehouseDetail(productId: number, companyId?: string) {
+  if (companyId) {
+    const data = await unwrap(
+      supabase
+        .from("warehouse_stock")
+        .select("c1, c2, c3, warehouses!inner(name, company_id)")
+        .eq("product_id", productId)
+        .eq("warehouses.company_id", companyId)
+        .order("warehouse_id"),
+      "getProductWarehouseDetail",
+    );
+
+    return (data ?? []).map((s) => ({
+      warehouse: (s.warehouses as unknown as { name: string })?.name ?? "Unknown",
+      c1: s.c1 ?? 0,
+      c2: s.c2 ?? 0,
+      c3: s.c3 ?? 0,
+    }));
+  }
+
   const data = await unwrap(
     supabase
       .from("warehouse_stock")
@@ -482,7 +518,35 @@ export async function getProductWarehouseDetail(productId: number) {
   }));
 }
 
-export async function getAllLowStockAlerts() {
+export async function getAllLowStockAlerts(companyId?: string) {
+  if (companyId) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await unwrap(
+      (supabase.rpc as any)("get_low_stock_alerts", {
+        p_company_id: companyId,
+        p_limit: null,
+      }),
+      "getAllLowStockAlerts",
+    );
+
+    return ((data ?? []) as {
+      product_id: number; sku: string; name: string; category: string;
+      total_c1: number; total_c2: number; total_c3: number;
+      total_stock: number; capacity: number;
+    }[]).map((r) => ({
+      productId: r.product_id,
+      sku: r.sku ?? "",
+      name: r.name ?? "",
+      category: r.category ?? "",
+      c1: Number(r.total_c1 ?? 0),
+      c2: Number(r.total_c2 ?? 0),
+      c3: Number(r.total_c3 ?? 0),
+      totalStock: Number(r.total_stock ?? 0),
+      capacity: Number(r.capacity ?? 1),
+      pct: Math.round((Number(r.total_stock ?? 0) / Number(r.capacity ?? 1)) * 100),
+    }));
+  }
+
   const data = await unwrap(
     supabase
       .from("low_stock_alerts")
@@ -539,14 +603,16 @@ type InventoryItem = {
   warehouses: { warehouse: string; c1: number; c2: number; c3: number }[];
 };
 
-export async function getInventoryStats() {
+export async function getInventoryStats(companyId?: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const rpc = supabase.rpc as any;
   const [totalProducts, totalStock, lowStockCount, activeCategories] = await Promise.all([
     unwrapCount(
       supabase.from("products").select("id", { count: "exact", head: true }),
       "getInventoryStats.products",
     ),
-    unwrap(supabase.rpc("get_total_stock"), "getInventoryStats.totalStock"),
-    unwrap(supabase.rpc("get_low_stock_count"), "getInventoryStats.lowStock"),
+    unwrap(rpc("get_total_stock", { p_company_id: companyId ?? null }), "getInventoryStats.totalStock"),
+    unwrap(rpc("get_low_stock_count", { p_company_id: companyId ?? null }), "getInventoryStats.lowStock"),
     unwrapCount(
       supabase.from("categories").select("id", { count: "exact", head: true }),
       "getInventoryStats.categories",
@@ -643,24 +709,33 @@ export async function getInventoryByCategory(categoryName: string): Promise<Inve
    Inventory v2
    ────────────────────────────────────────── */
 
-export async function getAllProducts() {
-  const data = await unwrap(
-    supabase
+export async function getAllProducts(companyId?: string) {
+  const cols = "product_id, sku, name, category, size_mm, size_inch, thickness_mm, flange_thickness_mm, weight_per_20ft, length_m, kg_per_m, weight_per_length, capacity, unit, total_c1, total_c2, total_c3, total_stock";
+  let q;
+  if (companyId) {
+    q = supabase
+      .from("company_stock_summary")
+      .select(cols)
+      .eq("company_id", companyId)
+      .order("sku");
+  } else {
+    q = supabase
       .from("product_stock_summary")
-      .select("product_id, sku, name, category, size_mm, size_inch, thickness_mm, flange_thickness_mm, weight_per_20ft, length_m, kg_per_m, weight_per_length, capacity, unit, total_c1, total_c2, total_c3, total_stock")
-      .order("sku"),
-    "getAllProducts",
-  );
+      .select(cols)
+      .order("sku");
+  }
 
-  return (data ?? []).map((r) => ({
-    productId: r.product_id!,
-    sku: r.sku ?? "",
-    name: r.name ?? "",
-    category: r.category ?? "",
-    sizeMm: r.size_mm as string | null,
-    sizeInch: r.size_inch as string | null,
-    thicknessMm: r.thickness_mm as string | null,
-    flangeThicknessMm: r.flange_thickness_mm as string | null,
+  const data = await unwrap(q, "getAllProducts");
+
+  return (data ?? []).map((r: Record<string, unknown>) => ({
+    productId: (r.product_id as number)!,
+    sku: (r.sku as string) ?? "",
+    name: (r.name as string) ?? "",
+    category: (r.category as string) ?? "",
+    sizeMm: (r.size_mm as string | null),
+    sizeInch: (r.size_inch as string | null),
+    thicknessMm: (r.thickness_mm as string | null),
+    flangeThicknessMm: (r.flange_thickness_mm as string | null),
     weightPer20ft: r.weight_per_20ft ? Number(r.weight_per_20ft) : null,
     lengthM: r.length_m ? Number(r.length_m) : null,
     kgPerM: r.kg_per_m ? Number(r.kg_per_m) : null,
@@ -982,7 +1057,30 @@ export async function getCategoriesWithIds() {
    Dashboard — New Queries
    ────────────────────────────────────────── */
 
-export async function getLowStockAlerts(limit = 5) {
+export async function getLowStockAlerts(limit = 5, companyId?: string) {
+  if (companyId) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const data = await unwrap(
+      (supabase.rpc as any)("get_low_stock_alerts", {
+        p_company_id: companyId,
+        p_limit: limit,
+      }),
+      "getLowStockAlerts",
+    );
+
+    return ((data ?? []) as {
+      sku: string; name: string; category: string;
+      total_stock: number; capacity: number;
+    }[]).map((r) => ({
+      sku: r.sku ?? "",
+      name: r.name ?? "",
+      category: r.category ?? "",
+      stock: Number(r.total_stock ?? 0),
+      capacity: Number(r.capacity ?? 1),
+      pct: Math.round((Number(r.total_stock ?? 0) / Number(r.capacity ?? 1)) * 100),
+    }));
+  }
+
   const data = await unwrap(
     supabase
       .from("low_stock_alerts")
@@ -1018,12 +1116,42 @@ export async function getOrdersPipeline() {
   return counts;
 }
 
-export async function getLowStockCount() {
+export async function getLowStockCount(companyId?: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const data = await unwrap(
-    supabase.rpc("get_low_stock_count"),
+    (supabase.rpc as any)("get_low_stock_count", {
+      p_company_id: companyId ?? null,
+    }),
     "getLowStockCount",
   );
   return Number(data ?? 0);
+}
+
+/* ──────────────────────────────────────────
+   Companies & Company Warehouses
+   ────────────────────────────────────────── */
+
+export async function getCompanies() {
+  const data = await unwrap(
+    supabase
+      .from("companies")
+      .select("id, name, code")
+      .order("name"),
+    "getCompanies",
+  );
+  return data ?? [];
+}
+
+export async function getCompanyWarehouses(companyId: string) {
+  const data = await unwrap(
+    supabase
+      .from("warehouses")
+      .select("id, name, location, company_id")
+      .eq("company_id", companyId)
+      .order("name"),
+    "getCompanyWarehouses",
+  );
+  return data ?? [];
 }
 
 /* ──────────────────────────────────────────

@@ -4,8 +4,7 @@
 -- This file contains ALL seed data for the Regan system.
 -- Schema uses bigint generated always as identity PKs.
 -- Products use a specs JSONB column for dimensions.
--- Total: 249 products (75 equal angle + 26 unequal angle
---        + 83 channel bars + 65 deformed bars)
+-- Total: 249 products, 13 categories, 3 companies, 11 clients
 -- ============================================================
 
 -- ── CATEGORIES ──
@@ -370,13 +369,32 @@ INSERT INTO products (sku, name, category_id, specs, length_m, kg_per_m, weight_
   ('DB-065', 'Deformed Bar Gr60', 3, '{"size_mm": "36"}', 12.0, 7.990, 95.880, 800, 'pcs');
 
 -- ============================================================
--- WAREHOUSE STOCK — Initialize all products across all warehouses
+-- COMPANIES
 -- ============================================================
 
-INSERT INTO warehouse_stock (product_id, warehouse_id, c1, c2, c3)
-SELECT p.id, w.id, 0, 0, 0
-FROM products p
-CROSS JOIN warehouses w;
+INSERT INTO companies (id, name, code) OVERRIDING SYSTEM VALUE VALUES
+  ('d715a70c-6bf7-41bf-bd82-6f0eec57b26d', 'Kirin',   'KRN'),
+  ('e52e9c2a-623c-4d49-87c0-51e1cadff60d', 'Regan',   'RGN'),
+  ('3082b68c-24cc-4940-ad97-f1c889cd41f3', 'Supremo', 'SUP');
+
+-- ============================================================
+-- CLIENTS
+-- ============================================================
+
+INSERT INTO clients (id, name, contact_person, email, phone, address, city) OVERRIDING SYSTEM VALUE VALUES
+  (6,  'Manila Steel Corp',           'Juan Dela Cruz',                'info@manilasteel.ph',      '0917-123-4567', '123 Tondo Blvd, Manila',                          'Manila'),
+  (7,  'Cebu Iron Works',             'Maria Santos',                  'sales@cebuiron.ph',        '0918-234-5678', '45 Mandaue Industrial, Cebu',                     'Cebu'),
+  (8,  'Davao Builders Supply',       'Pedro Reyes',                   'orders@davaobuild.ph',     '0919-345-6789', '78 Bajada St, Davao City',                        'Davao'),
+  (9,  'Iloilo Metal Trading',        'Ana Garcia',                    'info@iloilometal.ph',      '0920-456-7890', '12 La Paz Rd, Iloilo City',                       'Iloilo'),
+  (10, 'Pampanga Hardware Co.',       'Roberto Cruz',                  'sales@pampangahw.ph',      '0921-567-8901', '56 MacArthur Hwy, San Fernando',                  'Pampanga'),
+  (11, 'Batangas Steel Depot',        'Carmen Aquino',                 'depot@batangassteel.ph',   '0922-678-9012', '89 Batangas Port Area, Batangas City',            'Batangas'),
+  (12, 'Laguna Construction Supply',  'Jose Mendoza',                  'supply@lagunacon.ph',      '0923-789-0123', '34 National Hwy, Calamba, Laguna',                'Laguna'),
+  (13, 'Cagayan de Oro Metals',       'Linda Tan',                     'metals@cdometals.ph',      '0924-890-1234', '67 Limketkai Dr, CDO',                            'Cagayan de Oro'),
+  (14, 'Zamboanga Trading Inc.',      'Ricardo Lim',                   'trade@zambotrading.ph',    '0925-901-2345', '23 Veterans Ave, Zamboanga City',                  'Zamboanga'),
+  (15, 'Pangasinan Steelworks',       'Teresa Ramos',                  'steel@pangsteel.ph',       '0926-012-3456', '91 Dagupan Blvd, Pangasinan',                     'Pangasinan'),
+  (16, 'Regan Industrial',            'Regan Industrial Sales Dept.',  'sales@reganindustrial.ph', '(02) 8888-7777', 'Lot 5 Block 3, LISP, Brgy. Diezmo',              'Cabuyao, Laguna 4025');
+
+SELECT setval(pg_get_serial_sequence('clients', 'id'), (SELECT max(id) FROM clients));
 
 -- ============================================================
 -- RESET SEQUENCES after explicit ID inserts
@@ -392,5 +410,6 @@ SELECT setval(pg_get_serial_sequence('warehouses', 'id'), (SELECT max(id) FROM w
 --   Unequal Angle Bars: 26  (UA-001 to UA-026)
 --   Channel Bars:       83  (CB-001 to CB-083)
 --   Deformed Bars:      65  (DB-001 to DB-065)
--- Warehouse stock:      249 x 3 = 747 rows
+-- Companies:            3   (Kirin, Regan, Supremo)
+-- Clients:              11
 -- ============================================================

@@ -90,49 +90,327 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "client_warehouses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "company_crm_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_warehouses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "contact_with_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "client_warehouses_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_pipeline"
+            referencedColumns: ["company_id"]
+          },
         ]
       }
       clients: {
         Row: {
+          account_owner: string | null
           address: string | null
+          annual_revenue: number | null
           city: string | null
           contact_person: string | null
+          country: string | null
           created_at: string | null
           created_by: string | null
           email: string | null
+          employee_count: number | null
           id: number
+          industry: string | null
+          is_active: boolean | null
+          linkedin_url: string | null
           name: string
+          notes: string | null
+          phone: string | null
+          updated_at: string | null
+          website: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          account_owner?: string | null
+          address?: string | null
+          annual_revenue?: number | null
+          city?: string | null
+          contact_person?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          employee_count?: number | null
+          id?: never
+          industry?: string | null
+          is_active?: boolean | null
+          linkedin_url?: string | null
+          name: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string | null
+          website?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          account_owner?: string | null
+          address?: string | null
+          annual_revenue?: number | null
+          city?: string | null
+          contact_person?: string | null
+          country?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          email?: string | null
+          employee_count?: number | null
+          id?: never
+          industry?: string | null
+          is_active?: boolean | null
+          linkedin_url?: string | null
+          name?: string
+          notes?: string | null
+          phone?: string | null
+          updated_at?: string | null
+          website?: string | null
+          zip_code?: string | null
+        }
+        Relationships: []
+      }
+      companies: {
+        Row: {
+          address: string | null
+          city: string | null
+          code: string
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      contacts: {
+        Row: {
+          city: string | null
+          company_id: number | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          first_name: string
+          id: number
+          is_primary: boolean | null
+          job_title: string | null
+          last_name: string
+          linkedin_url: string | null
           notes: string | null
           phone: string | null
           updated_at: string | null
         }
         Insert: {
-          address?: string | null
           city?: string | null
-          contact_person?: string | null
+          company_id?: number | null
+          country?: string | null
           created_at?: string | null
           created_by?: string | null
           email?: string | null
+          first_name: string
           id?: never
-          name: string
+          is_primary?: boolean | null
+          job_title?: string | null
+          last_name: string
+          linkedin_url?: string | null
           notes?: string | null
           phone?: string | null
           updated_at?: string | null
         }
         Update: {
-          address?: string | null
           city?: string | null
-          contact_person?: string | null
+          company_id?: number | null
+          country?: string | null
           created_at?: string | null
           created_by?: string | null
           email?: string | null
+          first_name?: string
           id?: never
-          name?: string
+          is_primary?: boolean | null
+          job_title?: string | null
+          last_name?: string
+          linkedin_url?: string | null
           notes?: string | null
           phone?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "client_sales_summary"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_crm_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "contact_with_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "contacts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_pipeline"
+            referencedColumns: ["company_id"]
+          },
+        ]
+      }
+      crm_activities: {
+        Row: {
+          activity_type: string
+          company_id: number | null
+          contact_id: number | null
+          description: string | null
+          id: number
+          metadata: Json | null
+          opportunity_id: number | null
+          performed_at: string | null
+          performed_by: string
+          subject: string | null
+        }
+        Insert: {
+          activity_type: string
+          company_id?: number | null
+          contact_id?: number | null
+          description?: string | null
+          id?: never
+          metadata?: Json | null
+          opportunity_id?: number | null
+          performed_at?: string | null
+          performed_by: string
+          subject?: string | null
+        }
+        Update: {
+          activity_type?: string
+          company_id?: number | null
+          contact_id?: number | null
+          description?: string | null
+          id?: never
+          metadata?: Json | null
+          opportunity_id?: number | null
+          performed_at?: string | null
+          performed_by?: string
+          subject?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_activities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "client_sales_summary"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "crm_activities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_crm_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "contact_with_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "crm_activities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_pipeline"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "crm_activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contact_with_company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_pipeline"
+            referencedColumns: ["contact_id"]
+          },
+          {
+            foreignKeyName: "crm_activities_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "crm_activities_opportunity_id_fkey"
+            columns: ["opportunity_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_pipeline"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       deliveries: {
         Row: {
@@ -266,6 +544,120 @@ export type Database = {
           },
         ]
       }
+      opportunities: {
+        Row: {
+          amount: number | null
+          close_date: string | null
+          company_id: number | null
+          contact_id: number | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          id: number
+          lost_reason: string | null
+          name: string
+          notes: string | null
+          owner: string | null
+          probability: number | null
+          source: string | null
+          stage: string
+          updated_at: string | null
+        }
+        Insert: {
+          amount?: number | null
+          close_date?: string | null
+          company_id?: number | null
+          contact_id?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          id?: never
+          lost_reason?: string | null
+          name: string
+          notes?: string | null
+          owner?: string | null
+          probability?: number | null
+          source?: string | null
+          stage?: string
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number | null
+          close_date?: string | null
+          company_id?: number | null
+          contact_id?: number | null
+          created_at?: string | null
+          created_by?: string | null
+          currency?: string | null
+          id?: never
+          lost_reason?: string | null
+          name?: string
+          notes?: string | null
+          owner?: string | null
+          probability?: number | null
+          source?: string | null
+          stage?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "opportunities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "client_sales_summary"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "opportunities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_crm_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "contact_with_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "opportunities_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_pipeline"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "opportunities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contact_with_company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "opportunities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_pipeline"
+            referencedColumns: ["contact_id"]
+          },
+        ]
+      }
       order_approvals: {
         Row: {
           action: string
@@ -373,6 +765,13 @@ export type Database = {
             foreignKeyName: "order_items_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "company_stock_summary"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "low_stock_alerts"
             referencedColumns: ["product_id"]
           },
@@ -389,6 +788,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_inventory"
+            referencedColumns: ["warehouse_id"]
           },
           {
             foreignKeyName: "order_items_warehouse_id_fkey"
@@ -420,6 +826,7 @@ export type Database = {
           salesperson: string | null
           status: string
           subtotal: number | null
+          supplier_id: number | null
           tax: number | null
           total: number | null
           updated_at: string | null
@@ -444,6 +851,7 @@ export type Database = {
           salesperson?: string | null
           status?: string
           subtotal?: number | null
+          supplier_id?: number | null
           tax?: number | null
           total?: number | null
           updated_at?: string | null
@@ -468,6 +876,7 @@ export type Database = {
           salesperson?: string | null
           status?: string
           subtotal?: number | null
+          supplier_id?: number | null
           tax?: number | null
           total?: number | null
           updated_at?: string | null
@@ -488,11 +897,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "company_crm_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "contact_with_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "orders_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_pipeline"
+            referencedColumns: ["company_id"]
+          },
+          {
             foreignKeyName: "orders_client_warehouse_id_fkey"
             columns: ["client_warehouse_id"]
             isOneToOne: false
             referencedRelation: "client_warehouses"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "client_sales_summary"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "company_crm_summary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "contact_with_company"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "opportunity_pipeline"
+            referencedColumns: ["company_id"]
           },
         ]
       }
@@ -661,6 +1126,13 @@ export type Database = {
             foreignKeyName: "stock_movements_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "company_stock_summary"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "low_stock_alerts"
             referencedColumns: ["product_id"]
           },
@@ -677,6 +1149,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "products"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_inventory"
+            referencedColumns: ["warehouse_id"]
           },
           {
             foreignKeyName: "stock_movements_warehouse_id_fkey"
@@ -720,6 +1199,13 @@ export type Database = {
             foreignKeyName: "warehouse_stock_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
+            referencedRelation: "company_stock_summary"
+            referencedColumns: ["product_id"]
+          },
+          {
+            foreignKeyName: "warehouse_stock_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
             referencedRelation: "low_stock_alerts"
             referencedColumns: ["product_id"]
           },
@@ -741,6 +1227,13 @@ export type Database = {
             foreignKeyName: "warehouse_stock_warehouse_id_fkey"
             columns: ["warehouse_id"]
             isOneToOne: false
+            referencedRelation: "warehouse_inventory"
+            referencedColumns: ["warehouse_id"]
+          },
+          {
+            foreignKeyName: "warehouse_stock_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
             referencedRelation: "warehouses"
             referencedColumns: ["id"]
           },
@@ -748,24 +1241,49 @@ export type Database = {
       }
       warehouses: {
         Row: {
+          company_id: string
           created_at: string | null
           id: number
           location: string | null
           name: string
         }
         Insert: {
+          company_id: string
           created_at?: string | null
           id?: never
           location?: string | null
           name: string
         }
         Update: {
+          company_id?: string
           created_at?: string | null
           id?: never
           location?: string | null
           name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "warehouses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warehouses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "company_stock_summary"
+            referencedColumns: ["company_id"]
+          },
+          {
+            foreignKeyName: "warehouses_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_inventory"
+            referencedColumns: ["company_id"]
+          },
+        ]
       }
     }
     Views: {
@@ -777,6 +1295,84 @@ export type Database = {
           last_order_date: string | null
           order_count: number | null
           total_revenue: number | null
+        }
+        Relationships: []
+      }
+      company_crm_summary: {
+        Row: {
+          account_owner: string | null
+          address: string | null
+          annual_revenue: number | null
+          city: string | null
+          contact_count: number | null
+          contact_person: string | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          employee_count: number | null
+          id: number | null
+          industry: string | null
+          is_active: boolean | null
+          linkedin_url: string | null
+          name: string | null
+          notes: string | null
+          opportunity_count: number | null
+          order_count: number | null
+          phone: string | null
+          pipeline_value: number | null
+          total_orders_value: number | null
+          updated_at: string | null
+          website: string | null
+          won_revenue: number | null
+          zip_code: string | null
+        }
+        Relationships: []
+      }
+      company_stock_summary: {
+        Row: {
+          capacity: number | null
+          category: string | null
+          company_id: string | null
+          company_name: string | null
+          flange_thickness_mm: string | null
+          kg_per_m: number | null
+          length_m: number | null
+          name: string | null
+          product_id: number | null
+          size_inch: string | null
+          size_mm: string | null
+          sku: string | null
+          thickness_mm: string | null
+          total_c1: number | null
+          total_c2: number | null
+          total_c3: number | null
+          total_stock: number | null
+          unit: string | null
+          weight_per_20ft: string | null
+          weight_per_length: number | null
+        }
+        Relationships: []
+      }
+      contact_with_company: {
+        Row: {
+          city: string | null
+          company_id: number | null
+          company_name: string | null
+          country: string | null
+          created_at: string | null
+          created_by: string | null
+          email: string | null
+          first_name: string | null
+          full_name: string | null
+          id: number | null
+          is_primary: boolean | null
+          job_title: string | null
+          last_name: string | null
+          linkedin_url: string | null
+          notes: string | null
+          phone: string | null
+          updated_at: string | null
         }
         Relationships: []
       }
@@ -808,10 +1404,12 @@ export type Database = {
         Row: {
           capacity: number | null
           category: string | null
+          flange_thickness_mm: string | null
           kg_per_m: number | null
           length_m: number | null
           name: string | null
           product_id: number | null
+          size_inch: string | null
           size_mm: string | null
           sku: string | null
           thickness_mm: string | null
@@ -819,6 +1417,8 @@ export type Database = {
           total_c2: number | null
           total_c3: number | null
           total_stock: number | null
+          unit: string | null
+          weight_per_20ft: string | null
           weight_per_length: number | null
         }
         Relationships: []
@@ -829,6 +1429,29 @@ export type Database = {
           order_count: number | null
           revenue: number | null
           total_weight_kg: number | null
+        }
+        Relationships: []
+      }
+      opportunity_pipeline: {
+        Row: {
+          amount: number | null
+          close_date: string | null
+          company_id: number | null
+          company_name: string | null
+          contact_id: number | null
+          contact_name: string | null
+          created_at: string | null
+          created_by: string | null
+          currency: string | null
+          id: number | null
+          lost_reason: string | null
+          name: string | null
+          notes: string | null
+          owner: string | null
+          probability: number | null
+          source: string | null
+          stage: string | null
+          updated_at: string | null
         }
         Relationships: []
       }
@@ -896,6 +1519,8 @@ export type Database = {
           c2: number | null
           c3: number | null
           category: string | null
+          company_id: string | null
+          company_name: string | null
           length_m: number | null
           product_name: string | null
           size_mm: string | null
@@ -904,59 +1529,75 @@ export type Database = {
           subtotal: number | null
           thickness_mm: string | null
           updated_at: string | null
+          warehouse_id: number | null
           warehouse_name: string | null
         }
         Relationships: []
       }
     }
     Functions: {
-      create_order_with_items:
-        | {
-            Args: {
-              p_client_id: number
-              p_items: Json
-              p_notes: string
-              p_order_number: string
-              p_salesperson: string
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              p_client_id: number
-              p_created_by?: string
-              p_items: Json
-              p_notes: string
-              p_order_number: string
-              p_salesperson: string
-            }
-            Returns: number
-          }
-        | {
-            Args: {
-              p_client_id: number
-              p_client_warehouse_id?: number
-              p_created_by?: string
-              p_items: Json
-              p_notes: string
-              p_order_number: string
-              p_salesperson: string
-            }
-            Returns: number
-          }
+      create_order_with_items: {
+        Args: {
+          p_client_id: number
+          p_client_warehouse_id?: number
+          p_created_by?: string
+          p_items: Json
+          p_notes: string
+          p_order_number: string
+          p_salesperson: string
+          p_supplier_id?: number
+        }
+        Returns: number
+      }
       get_categories_with_counts: {
-        Args: never
+        Args: { p_company_id?: string }
         Returns: {
           id: number
           name: string
           product_count: number
         }[]
       }
-      get_dashboard_stats: { Args: never; Returns: Json }
-      get_fast_moving_items: { Args: { p_limit?: number }; Returns: Json }
-      get_low_stock_count: { Args: never; Returns: number }
+      get_crm_stats: { Args: never; Returns: Json }
+      get_dashboard_stats: { Args: { p_company_id?: string }; Returns: Json }
+      get_fast_moving_items: {
+        Args: { p_company_id?: string; p_days?: number; p_limit?: number }
+        Returns: Json
+      }
+      get_low_stock_alerts: {
+        Args: { p_company_id?: string; p_limit?: number }
+        Returns: {
+          capacity: number
+          category: string
+          flange_thickness_mm: string
+          kg_per_m: number
+          length_m: number
+          name: string
+          product_id: number
+          size_inch: string
+          size_mm: string
+          sku: string
+          thickness_mm: string
+          total_c1: number
+          total_c2: number
+          total_c3: number
+          total_stock: number
+          unit: string
+          weight_per_20ft: string
+          weight_per_length: number
+        }[]
+      }
+      get_low_stock_count: { Args: { p_company_id?: string }; Returns: number }
       get_sales_stats: { Args: never; Returns: Json }
-      get_total_stock: { Args: never; Returns: number }
+      get_total_stock: { Args: { p_company_id?: string }; Returns: number }
+      move_opportunity_stage: {
+        Args: {
+          p_lost_reason?: string
+          p_new_stage: string
+          p_opportunity_id: number
+          p_performed_by: string
+        }
+        Returns: undefined
+      }
       record_delivery:
         | { Args: { p_deliveries: Json; p_order_id: number }; Returns: Json }
         | {
@@ -1000,6 +1641,10 @@ export type Database = {
             }
             Returns: undefined
           }
+      update_order_item_prices: {
+        Args: { p_items: Json; p_order_id: number; p_updated_by?: string }
+        Returns: Json
+      }
       update_order_status:
         | {
             Args: { p_new_status: string; p_order_id: number }
