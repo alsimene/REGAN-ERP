@@ -322,8 +322,7 @@ export async function getOrderByNumber(orderNumber: string) {
         order_items (
           id, quantity, delivered_qty, classification, price_per_kg, weight_per_piece,
           total_weight, line_total,
-          products ( sku, name ),
-          warehouses ( name )
+          products ( sku, name, specs, categories ( name ) )
         )
       `)
       .eq("order_number", orderNumber)
@@ -398,9 +397,9 @@ export function computeCarrierPerformance(shipments: { carrier: string; status: 
    Inventory Page
    ────────────────────────────────────────── */
 
-export async function getFastMovingItems(limit = 20) {
+export async function getFastMovingItems(limit = 20, days = 30) {
   const data = await unwrap(
-    supabase.rpc("get_fast_moving_items", { p_limit: limit }),
+    supabase.rpc("get_fast_moving_items", { p_limit: limit, p_days: days }),
     "getFastMovingItems",
   );
 
@@ -409,9 +408,12 @@ export async function getFastMovingItems(limit = 20) {
     sku: string;
     product_name: string;
     category_name: string;
-    total_sold: number;
-    order_count: number;
+    total_moved: number;
+    total_ordered: number;
+    txn_count: number;
+    warehouse_count: number;
     current_stock: number;
+    last_movement: string;
   }[]);
 }
 
@@ -893,6 +895,23 @@ export async function createOrder(order: {
     "createOrder",
   );
   return data;
+}
+
+export async function updateOrderItemPrices(
+  orderId: number,
+  items: { item_id: number; price_per_kg: number }[],
+  updatedBy?: string,
+) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await unwrap(
+    (supabase.rpc as any)("update_order_item_prices", {
+      p_order_id: orderId,
+      p_items: items,
+      p_updated_by: updatedBy ?? null,
+    }),
+    "updateOrderItemPrices",
+  );
+  return data as { subtotal: number; tax: number; total: number };
 }
 
 /* ──────────────────────────────────────────

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { getOrderByNumber, updateOrderStatus, recordDelivery, getDeliveryHistory } from "@/lib/queries";
+import { getOrderByNumber, updateOrderStatus, recordDelivery, getDeliveryHistory, updateOrderItemPrices } from "@/lib/queries";
 import { useAuth } from "@/app/context/AuthContext";
 import LoadingOverlay from "@/app/components/LoadingOverlay";
 import ConfirmModal from "@/app/components/ConfirmModal";
@@ -130,8 +130,7 @@ type OrderData = {
     weight_per_piece: number;
     total_weight: number;
     line_total: number;
-    products: { sku: string; name: string } | null;
-    warehouses: { name: string } | null;
+    products: { sku: string; name: string; specs: Record<string, unknown> | null; categories: { name: string } | null } | null;
   }[];
 };
 
@@ -172,6 +171,8 @@ export default function OrderDetailPage() {
   const [historyModal, setHistoryModal] = useState(false);
   const [deliveryHistory, setDeliveryHistory] = useState<DeliveryRecord[]>([]);
   const [rejectionNotes, setRejectionNotes] = useState("");
+  const [editedPrices, setEditedPrices] = useState<Record<number, string>>({});
+  const [savingPrices, setSavingPrices] = useState(false);
   const [confirmModal, setConfirmModal] = useState<ConfirmState>({
     open: false,
     title: "",
@@ -326,6 +327,30 @@ export default function OrderDetailPage() {
     });
   }
 
+  async function handleSavePrices() {
+    if (!order) return;
+    const changes = Object.entries(editedPrices)
+      .filter(([itemId, val]) => {
+        const orig = order.order_items.find((i) => i.id === Number(itemId));
+        return orig && Number(val) !== Number(orig.price_per_kg) && Number(val) > 0;
+      })
+      .map(([itemId, val]) => ({ item_id: Number(itemId), price_per_kg: Number(val) }));
+
+    if (changes.length === 0) return;
+
+    setSavingPrices(true);
+    try {
+      const userName = user?.user_metadata?.full_name || user?.email || "Unknown";
+      await updateOrderItemPrices(order.id, changes, userName);
+      setEditedPrices({});
+      refreshOrder();
+    } catch (err) {
+      console.error("Failed to save prices:", err);
+    } finally {
+      setSavingPrices(false);
+    }
+  }
+
   function handleOpenDelivery() {
     setDeliveryModal(true);
   }
@@ -381,6 +406,23 @@ export default function OrderDetailPage() {
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);
   const totalDelivered = items.reduce((s, i) => s + i.delivered_qty, 0);
   const deliveryPct = totalQty > 0 ? Math.round((totalDelivered / totalQty) * 100) : 0;
+
+  // Price editing helpers
+  const isPendingApproval = status === "pending_approval";
+  const hasEditedPrices = Object.entries(editedPrices).some(([itemId, val]) => {
+    const orig = items.find((i) => i.id === Number(itemId));
+    return orig && Number(val) !== Number(orig.price_per_kg) && val !== "";
+  });
+
+  // Live-recalculated totals when prices are being edited
+  const liveSubtotal = items.reduce((sum, item) => {
+    const editedPrice = editedPrices[item.id];
+    const pricePerKg = editedPrice !== undefined && editedPrice !== "" ? Number(editedPrice) : Number(item.price_per_kg);
+    return sum + item.quantity * Number(item.weight_per_piece) * pricePerKg;
+  }, 0);
+  const liveTax = Math.round(liveSubtotal * 0.12 * 100) / 100;
+  const liveTotal = liveSubtotal + liveTax;
+  const showLiveTotals = hasEditedPrices;
 
   return (
     <div className="space-y-0">
@@ -602,34 +644,59 @@ export default function OrderDetailPage() {
         <div className="px-6 py-4 flex items-center gap-3 flex-wrap">
           {status === "pending_approval" && (
             <>
+              {hasEditedPrices && (
+                <button
+                  onClick={handleSavePrices}
+                  disabled={savingPrices}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 text-xs uppercase tracking-wider cursor-pointer"
+                  style={{
+                    backgroundColor: "var(--draft)",
+                    color: "#fff",
+                    fontFamily: "var(--font-body)",
+                    transition: "opacity 0.2s ease",
+                    opacity: savingPrices ? 0.6 : 1,
+                  }}
+                  onMouseEnter={(e) => { if (!savingPrices) e.currentTarget.style.opacity = "0.85"; }}
+                  onMouseLeave={(e) => { if (!savingPrices) e.currentTarget.style.opacity = "1"; }}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" />
+                  </svg>
+                  {savingPrices ? "Saving..." : "Save Prices"}
+                </button>
+              )}
               <button
                 onClick={handleApproveOrder}
-                disabled={saving}
+                disabled={saving || hasEditedPrices}
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-xs uppercase tracking-wider cursor-pointer"
                 style={{
                   backgroundColor: "var(--class-c1)",
                   color: "#fff",
                   fontFamily: "var(--font-body)",
                   transition: "opacity 0.2s ease",
+                  opacity: hasEditedPrices ? 0.5 : 1,
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                onMouseEnter={(e) => { if (!hasEditedPrices) e.currentTarget.style.opacity = "0.85"; }}
+                onMouseLeave={(e) => { if (!hasEditedPrices) e.currentTarget.style.opacity = "1"; }}
+                title={hasEditedPrices ? "Save price changes first" : undefined}
               >
                 {icons.check}
                 Approve
               </button>
               <button
                 onClick={handleRejectOrder}
-                disabled={saving}
+                disabled={saving || hasEditedPrices}
                 className="inline-flex items-center gap-1.5 px-4 py-2 text-xs uppercase tracking-wider cursor-pointer"
                 style={{
                   backgroundColor: "var(--accent)",
                   color: "#fff",
                   fontFamily: "var(--font-body)",
                   transition: "opacity 0.2s ease",
+                  opacity: hasEditedPrices ? 0.5 : 1,
                 }}
-                onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.85")}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                onMouseEnter={(e) => { if (!hasEditedPrices) e.currentTarget.style.opacity = "0.85"; }}
+                onMouseLeave={(e) => { if (!hasEditedPrices) e.currentTarget.style.opacity = "1"; }}
+                title={hasEditedPrices ? "Save price changes first" : undefined}
               >
                 {icons.xCircle}
                 Reject
@@ -851,8 +918,9 @@ export default function OrderDetailPage() {
                 {[
                   "#",
                   "Product",
-                  "Warehouse",
-                  "Class",
+                  "Category",
+                  "Size",
+                  "Thickness",
                   "Qty",
                   "Delivered",
                   "Price/kg",
@@ -872,7 +940,7 @@ export default function OrderDetailPage() {
               {items.length === 0 ? (
                 <tr>
                   <td
-                    colSpan={9}
+                    colSpan={10}
                     className="px-5 py-14 text-center"
                   >
                     <div className="flex flex-col items-center gap-2">
@@ -906,17 +974,23 @@ export default function OrderDetailPage() {
                         {item.products?.name}
                       </td>
                       <td className="px-5 py-3 text-muted whitespace-nowrap">
-                        {item.warehouses?.name ?? "\u2014"}
+                        {item.products?.categories?.name ?? "\u2014"}
                       </td>
-                      <td className="px-5 py-3 whitespace-nowrap">
-                        <span
-                          className="text-xs uppercase font-medium"
-                          style={{
-                            color: `var(--class-${item.classification})`,
-                          }}
-                        >
-                          {item.classification.toUpperCase()}
-                        </span>
+                      <td className="px-5 py-3 text-muted whitespace-nowrap">
+                        {(() => {
+                          const specs = item.products?.specs;
+                          if (!specs) return "\u2014";
+                          const size = (specs as Record<string, unknown>).size_inch ?? (specs as Record<string, unknown>).size_mm;
+                          return size ? String(size) : "\u2014";
+                        })()}
+                      </td>
+                      <td className="px-5 py-3 text-muted whitespace-nowrap">
+                        {(() => {
+                          const specs = item.products?.specs;
+                          if (!specs) return "\u2014";
+                          const t = (specs as Record<string, unknown>).thickness_mm;
+                          return t != null ? `${t} mm` : "\u2014";
+                        })()}
                       </td>
                       <td className="px-5 py-3 text-foreground">
                         {item.quantity.toLocaleString()}
@@ -943,11 +1017,39 @@ export default function OrderDetailPage() {
                           )}
                         </div>
                       </td>
-                      <td className="px-5 py-3 text-muted">
-                        {"\u20B1"}
-                        {Number(item.price_per_kg).toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                        })}
+                      <td className="px-5 py-3">
+                        {isPendingApproval ? (
+                          <div className="flex items-center gap-1">
+                            <span className="text-muted">{"\u20B1"}</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={editedPrices[item.id] ?? Number(item.price_per_kg).toFixed(2)}
+                              onChange={(e) =>
+                                setEditedPrices((prev) => ({ ...prev, [item.id]: e.target.value }))
+                              }
+                              className="w-24 px-2 py-1 text-sm tabular-nums text-right"
+                              style={{
+                                backgroundColor: "var(--background)",
+                                color: editedPrices[item.id] !== undefined && Number(editedPrices[item.id]) !== Number(item.price_per_kg)
+                                  ? "var(--accent)" : "var(--foreground)",
+                                border: "1px solid var(--border)",
+                                fontFamily: "var(--font-body)",
+                                outline: "none",
+                              }}
+                              onFocus={(e) => e.currentTarget.style.borderColor = "var(--accent)"}
+                              onBlur={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+                            />
+                          </div>
+                        ) : (
+                          <span className="text-muted">
+                            {"\u20B1"}
+                            {Number(item.price_per_kg).toLocaleString(undefined, {
+                              minimumFractionDigits: 2,
+                            })}
+                          </span>
+                        )}
                       </td>
                       <td className="px-5 py-3 text-muted">
                         {Number(item.total_weight).toLocaleString(undefined, {
@@ -956,10 +1058,21 @@ export default function OrderDetailPage() {
                         kg
                       </td>
                       <td className="px-5 py-3 text-foreground font-medium">
-                        {"\u20B1"}
-                        {Number(item.line_total).toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                        })}
+                        {(() => {
+                          const editedPrice = editedPrices[item.id];
+                          const pricePerKg = editedPrice !== undefined && editedPrice !== ""
+                            ? Number(editedPrice) : Number(item.price_per_kg);
+                          const liveLineTotal = item.quantity * Number(item.weight_per_piece) * pricePerKg;
+                          const isChanged = editedPrice !== undefined && Number(editedPrice) !== Number(item.price_per_kg);
+                          return (
+                            <span style={{ color: isChanged ? "var(--accent)" : undefined }}>
+                              {"\u20B1"}
+                              {liveLineTotal.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                              })}
+                            </span>
+                          );
+                        })()}
                       </td>
                     </tr>
                   );
@@ -1073,11 +1186,11 @@ export default function OrderDetailPage() {
                   Subtotal
                 </span>
                 <span
-                  className="text-sm text-foreground tabular-nums"
-                  style={{ fontFamily: "var(--font-body)" }}
+                  className="text-sm tabular-nums"
+                  style={{ fontFamily: "var(--font-body)", color: showLiveTotals ? "var(--accent)" : "var(--foreground)" }}
                 >
                   {"\u20B1"}
-                  {Number(order.subtotal).toLocaleString(undefined, {
+                  {(showLiveTotals ? liveSubtotal : Number(order.subtotal)).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                   })}
                 </span>
@@ -1093,11 +1206,11 @@ export default function OrderDetailPage() {
                   Tax (12%)
                 </span>
                 <span
-                  className="text-sm text-foreground tabular-nums"
-                  style={{ fontFamily: "var(--font-body)" }}
+                  className="text-sm tabular-nums"
+                  style={{ fontFamily: "var(--font-body)", color: showLiveTotals ? "var(--accent)" : "var(--foreground)" }}
                 >
                   {"\u20B1"}
-                  {Number(order.tax).toLocaleString(undefined, {
+                  {(showLiveTotals ? liveTax : Number(order.tax)).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                   })}
                 </span>
@@ -1116,9 +1229,12 @@ export default function OrderDetailPage() {
                 <span className="text-xs uppercase tracking-[0.2em] font-[family-name:var(--font-display)] text-foreground">
                   Total
                 </span>
-                <span className="text-xl font-[family-name:var(--font-display)] text-foreground tabular-nums">
+                <span
+                  className="text-xl font-[family-name:var(--font-display)] tabular-nums"
+                  style={{ color: showLiveTotals ? "var(--accent)" : "var(--foreground)" }}
+                >
                   {"\u20B1"}
-                  {Number(order.total).toLocaleString(undefined, {
+                  {(showLiveTotals ? liveTotal : Number(order.total)).toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                   })}
                 </span>

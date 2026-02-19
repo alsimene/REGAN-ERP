@@ -272,7 +272,7 @@ export default async function DashboardPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                  {["Product", "Category", "Sold", "Stock"].map((h) => (
+                  {["Product", "Category", "Moved", "Stock"].map((h) => (
                     <th
                       key={h}
                       className="px-5 py-3 text-left text-xs font-medium uppercase tracking-widest text-muted whitespace-nowrap"
@@ -296,7 +296,7 @@ export default async function DashboardPage() {
                       {item.category_name}
                     </td>
                     <td className="px-5 py-3 text-foreground font-medium whitespace-nowrap text-xs">
-                      {item.total_sold.toLocaleString()}
+                      {item.total_moved.toLocaleString()}
                     </td>
                     <td className="px-5 py-3 whitespace-nowrap text-xs font-medium"
                       style={{ color: item.current_stock === 0 ? "var(--accent)" : "var(--foreground)" }}
@@ -308,7 +308,7 @@ export default async function DashboardPage() {
                 {fastMovers.length === 0 && (
                   <tr>
                     <td colSpan={4} className="px-5 py-8 text-center text-muted text-sm">
-                      No sales data yet
+                      No transaction data yet
                     </td>
                   </tr>
                 )}

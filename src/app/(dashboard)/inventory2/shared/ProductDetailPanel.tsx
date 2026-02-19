@@ -21,7 +21,7 @@ export default function ProductDetailPanel({ product, warehouses, movements, loa
   }
 
   return (
-    <div className="space-y-6 py-5 px-6 animate-fade-up">
+    <div className="px-6 py-4animate-fade-up">
       {/* Specs */}
       <div>
         <h4 className="text-[13px] font-medium uppercase tracking-widest mb-3" style={{ color: "var(--foreground)" }}>Specifications</h4>

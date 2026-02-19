@@ -92,7 +92,7 @@ function Rivet({ className = "" }: { className?: string }) {
 }
 
 /* ── navigation items ── */
-type NavItem = { label: string; icon: React.ReactNode; href: string };
+type NavItem = { label: string; icon: React.ReactNode; href: string; comingSoon?: boolean };
 type NavGroupItem = { label: string; icon: React.ReactNode; children: { label: string; href: string }[] };
 type NavEntry = NavItem | NavGroupItem;
 
@@ -113,9 +113,9 @@ const mainNavItems: NavEntry[] = [
   },
 ];
 
-const managementNavItems = [
-  { label: "Sales", icon: icons.sales, href: "/sales" },
-  { label: "Shipments", icon: icons.shipments, href: "/shipments" },
+const managementNavItems: NavItem[] = [
+  { label: "Sales", icon: icons.sales, href: "/sales", comingSoon: true },
+  { label: "Shipments", icon: icons.shipments, href: "/shipments", comingSoon: true },
   { label: "Prices", icon: icons.prices, href: "/prices" },
 ];
 
@@ -131,11 +131,42 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
   "/settings": { title: "Settings", subtitle: "Account & Preferences" },
 };
 
-function NavLink({ item, pathname, indent }: { item: { label: string; icon?: React.ReactNode; href: string }; pathname: string; indent?: boolean }) {
+function NavLink({ item, pathname, indent }: { item: { label: string; icon?: React.ReactNode; href: string; comingSoon?: boolean }; pathname: string; indent?: boolean }) {
   const isActive =
     item.href === "/dashboard"
       ? pathname === "/dashboard"
       : pathname === item.href || pathname.startsWith(item.href + "/");
+
+  if (item.comingSoon) {
+    return (
+      <div
+        className={`w-full flex items-center gap-3 ${indent ? "pl-10 pr-3 py-2" : "px-3 py-2.5"} text-sm uppercase tracking-wider`}
+        style={{
+          color: "var(--panel-text-sub)",
+          opacity: 0.5,
+          borderLeft: "2px solid transparent",
+          fontFamily: "var(--font-body)",
+          fontSize: indent ? "11px" : undefined,
+          cursor: "not-allowed",
+        }}
+      >
+        {item.icon}
+        <span className="flex-1">{item.label}</span>
+        <span
+          className="text-[8px] tracking-[0.1em] px-1.5 py-0.5 rounded-sm uppercase"
+          style={{
+            backgroundColor: "var(--panel-accent)",
+            color: "#fff",
+            opacity: 1,
+            fontFamily: "var(--font-body)",
+            lineHeight: 1,
+          }}
+        >
+          Soon
+        </span>
+      </div>
+    );
+  }
 
   return (
     <Link
@@ -321,6 +352,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             >
               Regan
             </h1>
+            <span
+              className="text-[11px] uppercase tracking-[0.2em] mt-0.5 block"
+              style={{ color: "var(--panel-text-sub)", fontFamily: "var(--font-body)" }}
+            >
+              Inventory
+            </span>
             <div
               className="mt-2 h-[2px] w-10"
               style={{ backgroundColor: "var(--panel-accent)" }}

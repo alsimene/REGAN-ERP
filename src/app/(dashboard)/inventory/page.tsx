@@ -161,8 +161,11 @@ export default function InventoryPage() {
   const [inventoryStats, setInventoryStats] = useState<{ label: string; value: string }[]>([]);
   const [fastMovingItems, setFastMovingItems] = useState<{
     product_id: number; sku: string; product_name: string;
-    category_name: string; total_sold: number; order_count: number; current_stock: number;
+    category_name: string; total_moved: number; total_ordered: number;
+    txn_count: number; warehouse_count: number; current_stock: number;
+    last_movement: string;
   }[]>([]);
+  const [fastMovingDays, setFastMovingDays] = useState(30);
   const [loading, setLoading] = useState(true);
   const [categoryLoading, setCategoryLoading] = useState(false);
 
@@ -217,7 +220,7 @@ export default function InventoryPage() {
 
   /* ── initial load: stats + categories + fast movers ── */
   useEffect(() => {
-    Promise.all([getInventoryStats(), getCategoriesWithCounts(), getFastMovingItems()]).then(([stats, cats, fast]) => {
+    Promise.all([getInventoryStats(), getCategoriesWithCounts(), getFastMovingItems(20, fastMovingDays)]).then(([stats, cats, fast]) => {
       setInventoryStats(stats);
       setAllCategories(cats);
       setFastMovingItems(fast);
@@ -226,7 +229,13 @@ export default function InventoryPage() {
       console.error("Inventory initial load error:", err);
       setLoading(false);
     });
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── reload fast movers when period changes ── */
+  useEffect(() => {
+    if (loading) return;
+    getFastMovingItems(20, fastMovingDays).then(setFastMovingItems).catch(console.error);
+  }, [fastMovingDays]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── lazy load: fetch products when category changes ── */
   useEffect(() => {
@@ -807,23 +816,42 @@ export default function InventoryPage() {
           {/* ── OVERVIEW: Fast Moving Items ── */}
           {viewMode === "overview" && (
             <div>
-              <div className="px-5 pt-4 pb-2">
-                <h3 className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--foreground)" }}>
-                  Fast Moving Items
-                </h3>
-                <p className="text-xs text-muted uppercase tracking-wider mt-1">
-                  Select a category to browse inventory
-                </p>
+              <div className="px-5 pt-4 pb-2 flex items-center justify-between">
+                <div>
+                  <h3 className="text-xs font-medium uppercase tracking-widest" style={{ color: "var(--foreground)" }}>
+                    Fast Moving Items
+                  </h3>
+                  <p className="text-xs text-muted uppercase tracking-wider mt-1">
+                    Based on warehouse transactions (sales &amp; transfers)
+                  </p>
+                </div>
+                {/* Period toggle */}
+                <div className="flex items-center" style={{ border: "1px solid var(--border)", backgroundColor: "var(--background)" }}>
+                  {([7, 30, 90] as const).map((d) => (
+                    <button
+                      key={d}
+                      onClick={() => setFastMovingDays(d)}
+                      className="px-3 py-1.5 text-[10px] uppercase tracking-wider cursor-pointer"
+                      style={{
+                        backgroundColor: fastMovingDays === d ? "var(--foreground)" : "transparent",
+                        color: fastMovingDays === d ? "var(--background)" : "var(--muted)",
+                        transition: "background-color 0.15s ease, color 0.15s ease",
+                      }}
+                    >
+                      {d}D
+                    </button>
+                  ))}
+                </div>
               </div>
               {fastMovingItems.length === 0 ? (
                 <div className="flex items-center justify-center py-12">
-                  <p className="text-sm text-muted uppercase tracking-widest">No sales data yet</p>
+                  <p className="text-sm text-muted uppercase tracking-widest">No transactions yet</p>
                 </div>
               ) : (
                 <table className="w-full text-sm">
                   <thead>
                     <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                      {["#", "SKU", "PRODUCT", "CATEGORY", "UNITS SOLD", "ORDERS", "STOCK"].map((h) => (
+                      {["#", "SKU", "PRODUCT", "CATEGORY", "QTY MOVED", "TXNS", "STOCK", "LAST MOVED"].map((h) => (
                         <th
                           key={h}
                           className={`py-3 text-left text-xs font-medium uppercase tracking-widest text-muted whitespace-nowrap ${h === "#" ? "px-3 w-10" : "px-5"}`}
@@ -841,11 +869,14 @@ export default function InventoryPage() {
                         <td className="px-5 py-3 text-foreground whitespace-nowrap">{item.product_name}</td>
                         <td className="px-5 py-3 text-muted whitespace-nowrap">{item.category_name}</td>
                         <td className="px-5 py-3 whitespace-nowrap font-bold" style={{ color: "var(--foreground)" }}>
-                          {item.total_sold.toLocaleString()}
+                          {item.total_moved.toLocaleString()}
                         </td>
-                        <td className="px-5 py-3 text-muted whitespace-nowrap">{item.order_count.toLocaleString()}</td>
+                        <td className="px-5 py-3 text-muted whitespace-nowrap">{item.txn_count.toLocaleString()}</td>
                         <td className="px-5 py-3 whitespace-nowrap font-bold" style={{ color: item.current_stock === 0 ? "var(--accent)" : "var(--foreground)" }}>
                           {item.current_stock.toLocaleString()}
+                        </td>
+                        <td className="px-5 py-3 text-muted whitespace-nowrap text-xs">
+                          {new Date(item.last_movement).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
                         </td>
                       </tr>
                     ))}
