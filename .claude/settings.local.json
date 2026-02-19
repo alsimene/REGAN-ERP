@@ -19,7 +19,12 @@
       "Bash(npm install:*)",
       "Bash(git mv:*)",
       "WebFetch(domain:docs.landing.ai)",
-      "WebSearch"
+      "WebSearch",
+      "mcp__supabase__list_tables",
+      "mcp__supabase__list_migrations",
+      "mcp__supabase__list_extensions",
+      "Bash(git -C \"C:/Users/Lenovo/Desktop/REGAN-ERP/REGAN-ERP\" ls-files --others --ignored --exclude-standard supabase/migrations/)",
+      "Bash(git -C \"C:/Users/Lenovo/Desktop/REGAN-ERP/REGAN-ERP\" ls-tree HEAD supabase/migrations/ --name-only)"
     ]
   },
   "enableAllProjectMcpServers": true,

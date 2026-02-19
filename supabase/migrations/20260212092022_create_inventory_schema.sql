@@ -1,0 +1,15 @@
+-- ============================================================
+-- ORIGINAL INVENTORY SCHEMA (superseded by redesign_schema)
+-- ============================================================
+-- This migration created the initial tables for inventory
+-- management. It was completely replaced by the next migration
+-- (20260213022839_redesign_schema.sql) which drops and recreates
+-- everything. Kept here only for migration history consistency.
+-- ============================================================
+
+-- Original tables created:
+--   categories, warehouses, products, warehouse_stock,
+--   stock_movements + views (product_stock_summary,
+--   low_stock_alerts, warehouse_inventory, recent_movements)
+--
+-- All dropped and recreated in redesign_schema.
