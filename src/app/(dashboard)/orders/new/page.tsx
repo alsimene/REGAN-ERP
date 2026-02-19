@@ -1194,11 +1194,13 @@ function NewOrderForm() {
                                   phone: newWarehouse.phone.trim() || undefined,
                                   created_by: createdByName,
                                 });
-                                const wh = created as ClientWarehouse;
-                                setClientWarehouses((prev) => [...prev, wh]);
-                                setSelectedWarehouseId(wh.id);
-                                setShowNewWarehouse(false);
-                                setNewWarehouse({ name: "", address: "", city: "", contact_person: "", phone: "" });
+                                if (created) {
+                                  const wh = created as unknown as ClientWarehouse;
+                                  setClientWarehouses((prev) => [...prev, wh]);
+                                  setSelectedWarehouseId(wh.id);
+                                  setShowNewWarehouse(false);
+                                  setNewWarehouse({ name: "", address: "", city: "", contact_person: "", phone: "" });
+                                }
                               } catch (err) {
                                 console.error("Failed to create warehouse:", err);
                               } finally {
