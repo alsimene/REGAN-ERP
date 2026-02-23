@@ -619,7 +619,6 @@ export default function OpportunitiesPage() {
     e.preventDefault();
     setDragOverStage(stage);
   };
-  const _handleDragLeave = () => setDragOverStage(null);
   const handleDrop = async (stage: OpportunityStage) => {
     if (!draggedId) return;
     setDragOverStage(null);
@@ -640,7 +639,6 @@ export default function OpportunitiesPage() {
     e.preventDefault();
     setDragOverColKey(stageKey);
   };
-  const _handleColDragLeave = () => setDragOverColKey(null);
   const handleColDrop = (targetKey: string) => {
     if (!draggedColKey || draggedColKey === targetKey) {
       setDraggedColKey(null);

@@ -531,7 +531,7 @@ function NewOrderForm() {
       setUploadResult({ matched: matched.length, unmatched });
       setError("");
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- matchProduct uses only pure helpers and stable `categories` memo, safe to omit
     [products, marketPrices, itemKey]
   );
 
@@ -810,7 +810,7 @@ function NewOrderForm() {
         setExtracting(false);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- matchProduct uses only pure helpers and stable `categories` memo, safe to omit
     [clients, products, marketPrices, itemKey, selectedClientId, notes],
   );
 

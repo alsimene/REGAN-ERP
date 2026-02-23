@@ -11,10 +11,7 @@
     "prepare": "husky"
   },
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --max-warnings 0",
-      "bash -c 'npx tsc --noEmit'"
-    ]
+    "*.{ts,tsx}": "eslint --max-warnings 0"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.95.3",

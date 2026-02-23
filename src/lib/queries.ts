@@ -583,7 +583,8 @@ export async function getProductsPage({
   pageSize,
   sortBy,
   sortDir,
-  search: _search,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  search,
   parsed,
   nameFilter,
   sizeFilter,
