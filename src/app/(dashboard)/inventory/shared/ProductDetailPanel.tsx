@@ -3,6 +3,15 @@
 import type { ProductSummary, WarehouseBreakdown, StockMovement, Classification } from "../types";
 import { classColor, formatNumber } from "../utils";
 import { icons } from "../icons";
+import DataTable, { type ColumnDef } from "@/app/components/DataTable";
+
+const warehouseColumns: ColumnDef<WarehouseBreakdown>[] = [
+  { key: "warehouse", header: "WAREHOUSE" },
+  { key: "c1", header: "C1", align: "right" },
+  { key: "c2", header: "C2", align: "right" },
+  { key: "c3", header: "C3", align: "right" },
+  { key: "total", header: "TOTAL", align: "right" },
+];
 
 interface Props {
   product: ProductSummary;
@@ -21,7 +30,7 @@ export default function ProductDetailPanel({ product, warehouses, movements, loa
   }
 
   return (
-    <div className="px-6 py-4 animate-fade-up">
+    <div className="px-6 pt-4 pb-6 animate-fade-up">
       {/* Specs */}
       <div>
         <h4 className="text-[13px] font-medium uppercase tracking-widest mb-3" style={{ color: "var(--foreground)" }}>Specifications</h4>
@@ -38,7 +47,7 @@ export default function ProductDetailPanel({ product, warehouses, movements, loa
 
       {/* Warehouse breakdown */}
       <div>
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-3 mt-3">
           {icons.warehouse}
           <h4 className="text-[13px] font-medium uppercase tracking-widest" style={{ color: "var(--foreground)" }}>
             Warehouse Breakdown
@@ -47,43 +56,55 @@ export default function ProductDetailPanel({ product, warehouses, movements, loa
         {warehouses.length === 0 ? (
           <p className="text-[13px] text-muted">No warehouse data</p>
         ) : (
-          <table className="w-full text-[13px]">
-            <thead>
-              <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                <th className="py-2 text-left text-[12px] uppercase tracking-widest text-muted">Warehouse</th>
-                <th className="py-2 text-left text-[12px] uppercase tracking-widest text-muted">Company</th>
-                <th className="py-2 text-right text-[12px] uppercase tracking-widest" style={{ color: classColor("C1") }}>C1</th>
-                <th className="py-2 text-right text-[12px] uppercase tracking-widest" style={{ color: classColor("C2") }}>C2</th>
-                <th className="py-2 text-right text-[12px] uppercase tracking-widest" style={{ color: classColor("C3") }}>C3</th>
-                <th className="py-2 text-right text-[12px] uppercase tracking-widest text-muted">Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {warehouses.map((wh) => (
-                <tr key={wh.warehouse} style={{ borderBottom: "1px solid var(--border)" }}>
-                  <td className="py-2 text-muted">{wh.warehouse}</td>
-                  <td className="py-2">
-                    <span
-                      className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 font-medium"
-                      style={{ color: "var(--foreground)", backgroundColor: "var(--input-bg)", border: "1px solid var(--border)" }}
-                    >
-                      {wh.company}
-                    </span>
-                  </td>
-                  <td className="py-2 text-right font-bold tabular-nums" style={{ color: classColor("C1") }}>{formatNumber(wh.c1)}</td>
-                  <td className="py-2 text-right font-bold tabular-nums" style={{ color: classColor("C2") }}>{formatNumber(wh.c2)}</td>
-                  <td className="py-2 text-right font-bold tabular-nums" style={{ color: classColor("C3") }}>{formatNumber(wh.c3)}</td>
-                  <td className="py-2 text-right font-bold tabular-nums" style={{ color: "var(--foreground)" }}>{formatNumber(wh.c1 + wh.c2 + wh.c3)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          (() => {
+            // Group warehouses by company, maintaining Regan → Kirin → Supremo order
+            const grouped: { company: string; items: WarehouseBreakdown[] }[] = [];
+            for (const wh of warehouses) {
+              const last = grouped[grouped.length - 1];
+              if (last && last.company === wh.company) {
+                last.items.push(wh);
+              } else {
+                grouped.push({ company: wh.company, items: [wh] });
+              }
+            }
+            return (
+              <div className="space-y-4">
+                {grouped.map((group) => (
+                  <div key={group.company}>
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-muted mb-1.5">{group.company}</p>
+                    <DataTable<WarehouseBreakdown>
+                      columns={warehouseColumns}
+                      data={group.items}
+                      rowKey={(wh) => wh.warehouse}
+                      renderCell={(wh, col) => {
+                        switch (col.key) {
+                          case "warehouse":
+                            return <span className="text-[13px] text-muted">{wh.warehouse}</span>;
+                          case "c1":
+                            return <span className="text-[13px] font-bold tabular-nums" style={{ color: classColor("C1") }}>{formatNumber(wh.c1)}</span>;
+                          case "c2":
+                            return <span className="text-[13px] font-bold tabular-nums" style={{ color: classColor("C2") }}>{formatNumber(wh.c2)}</span>;
+                          case "c3":
+                            return <span className="text-[13px] font-bold tabular-nums" style={{ color: classColor("C3") }}>{formatNumber(wh.c3)}</span>;
+                          case "total":
+                            return <span className="text-[13px] font-bold tabular-nums" style={{ color: "var(--foreground)" }}>{formatNumber(wh.c1 + wh.c2 + wh.c3)}</span>;
+                          default:
+                            return null;
+                        }
+                      }}
+                      emptyMessage=""
+                    />
+                  </div>
+                ))}
+              </div>
+            );
+          })()
         )}
       </div>
 
       {/* Recent movements */}
       <div>
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-3 mt-3">
           {icons.clock}
           <h4 className="text-[13px] font-medium uppercase tracking-widest" style={{ color: "var(--foreground)" }}>
             Recent Movements
@@ -92,7 +113,7 @@ export default function ProductDetailPanel({ product, warehouses, movements, loa
         {movements.length === 0 ? (
           <p className="text-[13px] text-muted">No recent movements</p>
         ) : (
-          <div className="space-y-1 max-h-56 overflow-y-auto">
+          <div className="space-y-1">
             {movements.map((mv) => {
               const isPositive = mv.type === "adjustment_add" || mv.type === "restock" || mv.type === "receive";
               return (
@@ -116,9 +137,10 @@ export default function ProductDetailPanel({ product, warehouses, movements, loa
                       {mv.warehouse}{mv.performedBy ? ` — ${mv.performedBy}` : ""}
                     </div>
                   </div>
-                  <span className="text-[11px] text-muted whitespace-nowrap ml-3">
-                    {new Date(mv.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                  </span>
+                  <div className="text-[11px] text-muted whitespace-nowrap ml-3 text-right">
+                    <div>{new Date(mv.createdAt).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}</div>
+                    <div>{new Date(mv.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</div>
+                  </div>
                 </div>
               );
             })}

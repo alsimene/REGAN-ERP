@@ -2,38 +2,12 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  getInventoryStats,
-  getCategoriesWithCounts,
-  getAllProducts,
   getProductWarehouseDetail,
   getProductMovements,
   getFastMovingItems,
   getAllLowStockAlerts,
 } from "@/lib/queries";
-import type { ProductSummary, StatCard, CategoryWithCount, WarehouseBreakdown, StockMovement, FastMovingItem, LowStockItem } from "../types";
-
-export function useInventoryData() {
-  const [stats, setStats] = useState<StatCard[]>([]);
-  const [categories, setCategories] = useState<CategoryWithCount[]>([]);
-  const [allProducts, setAllProducts] = useState<ProductSummary[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    Promise.all([getInventoryStats(), getCategoriesWithCounts(), getAllProducts()])
-      .then(([statsData, catsData, productsData]) => {
-        setStats(statsData);
-        setCategories(catsData);
-        setAllProducts(productsData);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error("Inventory initial load error:", err);
-        setLoading(false);
-      });
-  }, []);
-
-  return { stats, categories, allProducts, loading };
-}
+import type { WarehouseBreakdown, StockMovement, FastMovingItem, LowStockItem } from "../types";
 
 export function useProductDetail(productId: string | null) {
   const [warehouses, setWarehouses] = useState<WarehouseBreakdown[]>([]);
@@ -78,7 +52,6 @@ export function useFastMovingItems() {
 export function useLowStockAlerts() {
   const [items, setItems] = useState<LowStockItem[]>([]);
   const [loading, setLoading] = useState(false);
-
   const load = useCallback(() => {
     setLoading(true);
     getAllLowStockAlerts()
@@ -86,6 +59,5 @@ export function useLowStockAlerts() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
-
   return { items, loading, load };
 }

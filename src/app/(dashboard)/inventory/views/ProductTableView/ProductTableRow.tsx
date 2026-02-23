@@ -52,38 +52,23 @@ export function renderProductCell(
       return <span className="text-[13px] text-muted tabular-nums">{p.weightPerLength !== null && p.weightPerLength > 0 ? p.weightPerLength.toFixed(3) : "—"}</span>;
     case "weightPer20ft":
       return <span className="text-[13px] text-muted tabular-nums">{p.weightPer20ft !== null && p.weightPer20ft > 0 ? p.weightPer20ft.toFixed(1) : "—"}</span>;
-    case "c1":
-      return <span className="text-[13px] font-bold tabular-nums" style={{ color: classColor("C1") }}>{formatNumber(p.c1)}</span>;
-    case "c2":
-      return <span className="text-[13px] font-bold tabular-nums" style={{ color: classColor("C2") }}>{formatNumber(p.c2)}</span>;
-    case "c3":
-      return <span className="text-[13px] font-bold tabular-nums" style={{ color: classColor("C3") }}>{formatNumber(p.c3)}</span>;
+    case "regan":
+    case "kirin":
+    case "supremo": {
+      const co = p[colKey as "regan" | "kirin" | "supremo"];
+      return (
+        <div className="flex items-center gap-2">
+          <span className="text-[12px] font-bold tabular-nums" style={{ color: co.c1 > 0 ? classColor("C1") : "var(--muted)" }}>{formatNumber(co.c1)}</span>
+          <span className="text-[12px] font-bold tabular-nums" style={{ color: co.c2 > 0 ? classColor("C2") : "var(--muted)" }}>{formatNumber(co.c2)}</span>
+          <span className="text-[12px] font-bold tabular-nums" style={{ color: co.c3 > 0 ? classColor("C3") : "var(--muted)" }}>{formatNumber(co.c3)}</span>
+        </div>
+      );
+    }
     case "totalStock":
       return (
-        <span className="text-[13px] font-bold tabular-nums" style={{ color: isOut ? "var(--accent)" : "var(--foreground)" }}>
-          {formatNumber(p.totalStock)}
-        </span>
+        <span className="text-[13px] font-bold tabular-nums" style={{ color: isOut ? "var(--accent)" : "var(--foreground)" }}>{formatNumber(p.totalStock)}</span>
       );
-    case "companies":
-      return p.companies.length > 0 ? (
-        <div className="flex items-center gap-1 flex-wrap">
-          {p.companies.map((c) => (
-            <span
-              key={c}
-              className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 font-medium"
-              style={{
-                color: "var(--foreground)",
-                backgroundColor: "var(--input-bg)",
-                border: "1px solid var(--border)",
-              }}
-            >
-              {c}
-            </span>
-          ))}
-        </div>
-      ) : (
-        <span className="text-[12px]" style={{ color: "var(--muted)" }}>—</span>
-      );
+
     default:
       return null;
   }

@@ -30,7 +30,7 @@ export default function ProductDetailModal({ product, warehouses, movements, loa
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center pb-[10vh]"
       style={{ backgroundColor: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(2px)" }}
       onClick={onClose}
     >
@@ -45,7 +45,7 @@ export default function ProductDetailModal({ product, warehouses, movements, loa
           backgroundColor: "var(--background)",
           border: "1px solid var(--border)",
           boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
-          maxHeight: "85vh",
+          maxHeight: "90vh",
           display: "flex",
           flexDirection: "column",
         }}

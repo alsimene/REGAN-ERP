@@ -4,7 +4,8 @@ export type SortDir = "asc" | "desc";
 export type SizeUnit = "original" | "in" | "mm";
 export type ViewMode = "all" | "category" | "lowstock" | "fastmovers";
 
-export const PAGE_SIZE = 50;
+export const PAGE_SIZE_DEFAULT = 50;
+export const PAGE_SIZE_OPTIONS = [10, 20, 50] as const;
 
 export const STORAGE_KEYS = {
   columns: "inv2-hidden-columns",
@@ -30,7 +31,9 @@ export interface ProductSummary {
   c2: number;
   c3: number;
   totalStock: number;
-  companies: string[];
+  regan: { c1: number; c2: number; c3: number };
+  kirin: { c1: number; c2: number; c3: number };
+  supremo: { c1: number; c2: number; c3: number };
 }
 
 export interface WarehouseBreakdown {
@@ -93,4 +96,21 @@ export interface LowStockItem {
   c3: number;
   totalStock: number;
   pct: number;
+}
+
+export interface PageParams {
+  page: number;
+  pageSize: number;
+  sortBy: string;
+  sortDir: string;
+  search: string;
+  nameFilter: string | null;
+  sizeFilter: string | null;
+  thicknessFilter: string | null;
+}
+
+export interface FilterOptions {
+  names: string[];
+  sizes: string[];
+  thicknesses: string[];
 }

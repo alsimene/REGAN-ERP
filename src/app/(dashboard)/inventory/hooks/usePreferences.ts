@@ -2,15 +2,13 @@
 
 import { useState, useCallback } from "react";
 import { STORAGE_KEYS } from "../types";
-import type { SortKey, SortDir, SizeUnit } from "../types";
+import type { SizeUnit } from "../types";
 
 interface Preferences {
-  sortKey: SortKey;
-  sortDir: SortDir;
   sizeUnit: SizeUnit;
 }
 
-const DEFAULT: Preferences = { sortKey: "sku", sortDir: "asc", sizeUnit: "original" };
+const DEFAULT: Preferences = { sizeUnit: "original" };
 
 function load(): Preferences {
   if (typeof window === "undefined") return DEFAULT;
@@ -32,14 +30,6 @@ function save(prefs: Preferences) {
 export function usePreferences() {
   const [prefs, setPrefs] = useState<Preferences>(load);
 
-  const setSortKey = useCallback((key: SortKey) => {
-    setPrefs((prev) => {
-      const next = { ...prev, sortKey: key, sortDir: prev.sortKey === key ? (prev.sortDir === "asc" ? "desc" as SortDir : "asc" as SortDir) : "asc" as SortDir };
-      save(next);
-      return next;
-    });
-  }, []);
-
   const setSizeUnit = useCallback((unit: SizeUnit) => {
     setPrefs((prev) => {
       const next = { ...prev, sizeUnit: unit };
@@ -48,5 +38,5 @@ export function usePreferences() {
     });
   }, []);
 
-  return { ...prefs, setSortKey, setSizeUnit };
+  return { ...prefs, setSizeUnit };
 }

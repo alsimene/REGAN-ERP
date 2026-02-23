@@ -681,6 +681,42 @@ CROSS JOIN (VALUES ('C1'), ('C2'), ('C3')) AS cls(classification)
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
+-- STOCK MOVEMENTS (historical seed data)
+-- ~5 movements per warehouse_stock row, spread over 90 days
+-- ============================================================
+
+WITH movement_gen AS (
+  SELECT
+    ws.product_id,
+    ws.warehouse_id,
+    ws.classification,
+    (ARRAY['restock','restock','adjustment_add','delivery','delivery'])[1 + floor(random() * 5)::int] AS mv_type,
+    (ARRAY['Juan Dela Cruz','Maria Santos','Pedro Reyes','Ana Garcia','Carlos Regan'])[1 + floor(random() * 5)::int] AS actor,
+    now() - (floor(random() * 90) || ' days')::interval - (floor(random() * 24) || ' hours')::interval AS ts
+  FROM warehouse_stock ws
+  CROSS JOIN generate_series(1, 5) AS gs(n)
+)
+INSERT INTO stock_movements (product_id, warehouse_id, movement_type, classification, quantity, performed_by, notes, created_at)
+SELECT
+  product_id,
+  warehouse_id,
+  mv_type,
+  classification,
+  CASE WHEN mv_type = 'delivery' THEN -(1 + floor(random() * 30))::int
+       ELSE (1 + floor(random() * 50))::int
+  END,
+  actor,
+  CASE floor(random() * 5)::int
+    WHEN 0 THEN 'Regular restock'
+    WHEN 1 THEN 'Inventory count adjustment'
+    WHEN 2 THEN 'Client delivery'
+    WHEN 3 THEN 'Warehouse transfer'
+    ELSE NULL
+  END,
+  ts
+FROM movement_gen;
+
+-- ============================================================
 -- SEED COMPLETE
 -- Total products: 648
 --   Equal Angle Bars:   75  (AB-001 to AB-075)

@@ -46,11 +46,12 @@ export default function ProductTable({ products, sortKey, sortDir, onSort, sizeU
     if (vis("kgPerM")) cols.push({ key: "kgPerM", header: "KG/M", align: "right", minWidth: 70 });
     if (vis("weightPerLength")) cols.push({ key: "weightPerLength", header: "WT/PCS", align: "right", minWidth: 70 });
     if (vis("weightPer20ft")) cols.push({ key: "weightPer20ft", header: "WT/20FT", align: "right", minWidth: 70 });
-    if (vis("c1")) cols.push({ key: "c1", header: "C1", align: "right", minWidth: 60 });
-    if (vis("c2")) cols.push({ key: "c2", header: "C2", align: "right", minWidth: 60 });
-    if (vis("c3")) cols.push({ key: "c3", header: "C3", align: "right", minWidth: 60 });
-    if (vis("totalStock")) cols.push({ key: "totalStock", header: <SortHeader column="totalStock" sortKey={sortKey} sortDir={sortDir} onSort={onSort}>TOTAL</SortHeader>, align: "right", minWidth: 70 });
-    if (vis("companies")) cols.push({ key: "companies", header: "COMPANIES", minWidth: 120 });
+    if (vis("regan")) cols.push({ key: "regan", header: <span className="inline-flex items-center gap-1.5">{icons.warehouse} REGAN</span>, minWidth: 130 });
+    if (vis("kirin")) cols.push({ key: "kirin", header: <span className="inline-flex items-center gap-1.5">{icons.warehouse} KIRIN</span>, minWidth: 130 });
+    if (vis("supremo")) cols.push({ key: "supremo", header: <span className="inline-flex items-center gap-1.5">{icons.warehouse} SUPREMO</span>, minWidth: 130 });
+
+    if (vis("totalStock")) cols.push({ key: "totalStock", header: <SortHeader column="totalStock" sortKey={sortKey} sortDir={sortDir} onSort={onSort}>TOTAL</SortHeader>, minWidth: 70 });
+
     return cols;
   }, [sortKey, sortDir, onSort, sizeUnit, hiddenColumns]); // eslint-disable-line react-hooks/exhaustive-deps
 

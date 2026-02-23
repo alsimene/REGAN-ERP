@@ -9,9 +9,7 @@ import Pagination from "../../shared/Pagination";
 
 interface Props {
   products: ProductSummary[];
-  allProducts: ProductSummary[];
-  totalAll: number;
-  filteredCount: number;
+  totalCount: number;
   sortKey: SortKey;
   sortDir: SortDir;
   onSort: (key: SortKey) => void;
@@ -19,21 +17,23 @@ interface Props {
   hiddenColumns: Set<string>;
   currentPage: number;
   totalPages: number;
+  pageSize: number;
   onPrev: () => void;
   onNext: () => void;
+  onPageSizeChange: (size: number) => void;
   startIndex: number;
 }
 
 export default function ProductTableView({
-  products, allProducts, totalAll, filteredCount, sortKey, sortDir, onSort,
+  products, totalCount, sortKey, sortDir, onSort,
   sizeUnit, hiddenColumns,
-  currentPage, totalPages, onPrev, onNext, startIndex,
+  currentPage, totalPages, pageSize, onPrev, onNext, onPageSizeChange, startIndex,
 }: Props) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const { warehouses, movements, loading: detailLoading } = useProductDetail(selectedId);
   const selectedProduct = useMemo(
-    () => allProducts.find((p) => p.productId === selectedId) ?? null,
-    [allProducts, selectedId],
+    () => products.find((p) => p.productId === selectedId) ?? null,
+    [products, selectedId],
   );
 
   return (
@@ -47,16 +47,18 @@ export default function ProductTableView({
         hiddenColumns={hiddenColumns}
         startIndex={startIndex}
         onSelectProduct={(id) => setSelectedId(selectedId === id ? null : id)}
-        filteredCount={filteredCount}
-        totalAll={totalAll}
+        filteredCount={totalCount}
+        totalAll={totalCount}
       />
       <Pagination
         currentPage={currentPage}
         totalPages={totalPages}
-        totalItems={totalAll}
-        filteredItems={allProducts.length}
+        totalItems={totalCount}
+        filteredItems={totalCount}
+        pageSize={pageSize}
         onPrev={onPrev}
         onNext={onNext}
+        onPageSizeChange={onPageSizeChange}
       />
 
       {selectedProduct && (

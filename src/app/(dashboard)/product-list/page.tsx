@@ -1,10 +1,22 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { getAllProductsCatalog, getCatalogCategories, updateProductStatus } from "@/lib/queries";
 import { matchesSearch } from "../inventory/utils";
-import { usePagination } from "../inventory/hooks/usePagination";
 import Pagination from "../inventory/shared/Pagination";
+
+const DEFAULT_PAGE_SIZE = 10;
+
+function usePagination(totalItems: number) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  useEffect(() => { setCurrentPage(1); }, [totalItems, pageSize]);
+  const prevPage = useCallback(() => { setCurrentPage((p) => Math.max(1, p - 1)); }, []);
+  const nextPage = useCallback(() => { setCurrentPage((p) => Math.min(totalPages, p + 1)); }, [totalPages]);
+  const pageSlice = useMemo(() => { const start = (currentPage - 1) * pageSize; return { start, end: start + pageSize }; }, [currentPage, pageSize]);
+  return { currentPage, totalPages, prevPage, nextPage, pageSlice, pageSize, setPageSize };
+}
 import LoadingOverlay from "@/app/components/LoadingOverlay";
 import SearchInput from "@/app/components/SearchInput";
 import DataTable, { type ColumnDef } from "@/app/components/DataTable";
@@ -197,7 +209,7 @@ export default function Inventory3Page() {
   }, [debouncedSearch, parsed, indexMap, products]);
 
   /* ── pagination ── */
-  const { currentPage, totalPages, prevPage, nextPage, pageSlice } = usePagination(filtered.length);
+  const { currentPage, totalPages, prevPage, nextPage, pageSlice, pageSize, setPageSize } = usePagination(filtered.length);
   const pageProducts = useMemo(
     () => filtered.slice(pageSlice.start, pageSlice.end),
     [filtered, pageSlice],
@@ -400,8 +412,10 @@ export default function Inventory3Page() {
         totalPages={totalPages}
         totalItems={products.length}
         filteredItems={filtered.length}
+        pageSize={pageSize}
         onPrev={prevPage}
         onNext={nextPage}
+        onPageSizeChange={setPageSize}
       />
     </div>
     </>
