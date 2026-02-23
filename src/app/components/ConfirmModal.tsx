@@ -10,6 +10,7 @@ interface ConfirmModalProps {
   cancelLabel?: string;
   variant?: "danger" | "warning";
   children?: React.ReactNode;
+  zIndex?: number;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -22,6 +23,7 @@ export default function ConfirmModal({
   cancelLabel = "Go Back",
   variant = "warning",
   children,
+  zIndex = 50,
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
@@ -48,8 +50,8 @@ export default function ConfirmModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center"
-      style={{ backgroundColor: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(2px)" }}
+      className="fixed inset-0 flex items-center justify-center"
+      style={{ backgroundColor: "rgba(0, 0, 0, 0.5)", backdropFilter: "blur(2px)", zIndex }}
       onClick={onCancel}
     >
       <div

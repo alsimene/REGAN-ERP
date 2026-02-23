@@ -25,6 +25,7 @@ import ConfirmModal from "@/app/components/ConfirmModal";
 import LoadingOverlay from "@/app/components/LoadingOverlay";
 import { useAuth } from "@/app/context/AuthContext";
 import type { ExtractedPurchaseOrder, ExtractedLineItem } from "@/lib/poExtractionSchema";
+import { getApprovedQuotationByNumber } from "@/lib/crmQueries";
 
 type Client = { id: string; name: string; contact_person: string | null; phone: string | null; email: string | null; address: string | null; city: string | null };
 type ClientWarehouse = { id: string; client_id: string; name: string; address: string | null; city: string | null; contact_person: string | null; phone: string | null; is_default: boolean };
@@ -128,6 +129,13 @@ function NewOrderForm() {
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [showAddItemModal, setShowAddItemModal] = useState(false);
 
+  // Quotation import state
+  const [showQuotImport, setShowQuotImport] = useState(false);
+  const [quotImportNumber, setQuotImportNumber] = useState("");
+  const [quotImportLoading, setQuotImportLoading] = useState(false);
+  const [quotImportError, setQuotImportError] = useState("");
+  const [importedQuotation, setImportedQuotation] = useState<string | null>(null);
+
   // Upload state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploadResult, setUploadResult] = useState<{
@@ -214,7 +222,7 @@ function NewOrderForm() {
           // Map old draft items to new shape
           setItems(draft.items.map((i) => ({
             key: i.key,
-            product_id: i.product_id,
+            product_id: String(i.product_id),
             product_name: i.product_name,
             sku: i.sku,
             category_name: "",
@@ -874,6 +882,61 @@ function NewOrderForm() {
     router.push("/orders");
   }
 
+  async function handleQuotationImport() {
+    const num = quotImportNumber.trim().toUpperCase();
+    if (!num) { setQuotImportError("Enter a quotation number."); return; }
+    setQuotImportLoading(true);
+    setQuotImportError("");
+    try {
+      const quotation = await getApprovedQuotationByNumber(num);
+      if (!quotation) {
+        setQuotImportError("Quotation not found or not yet approved. Only approved quotations can be imported.");
+        setQuotImportLoading(false);
+        return;
+      }
+      // Map quotation items to order LineItems
+      let nextKey = itemKey;
+      const mappedItems: LineItem[] = quotation.items.map((qi) => ({
+        key: nextKey++,
+        product_id: String(qi.product_id),
+        product_name: qi.product_name,
+        sku: qi.sku,
+        category_name: qi.category_name,
+        quantity: qi.quantity,
+        price_per_kg: qi.price_per_kg,
+        weight_per_piece: qi.weight_per_piece,
+      }));
+      setItems(mappedItems);
+      setItemKey(nextKey);
+      if (quotation.notes) setNotes(quotation.notes);
+      setShippingMethod(quotation.shipping_method);
+      if (quotation.shipping_fee > 0) setShippingFee(quotation.shipping_fee);
+
+      // Auto-fill client from quotation company_name
+      if (quotation.company_name) {
+        const companyLower = quotation.company_name.toLowerCase();
+        const matchedClient = clients.find(
+          (c) => c.name.toLowerCase() === companyLower
+            || c.name.toLowerCase().includes(companyLower)
+            || companyLower.includes(c.name.toLowerCase())
+        );
+        if (matchedClient) setSelectedClientId(matchedClient.id);
+      }
+
+      // Set PO number from quotation number
+      setOrderNumber("PO-" + quotation.quotation_number);
+
+      setImportedQuotation(quotation.quotation_number);
+      setShowQuotImport(false);
+      setQuotImportNumber("");
+    } catch (err) {
+      console.error("Quotation import error:", err);
+      setQuotImportError("Failed to look up quotation. Please try again.");
+    } finally {
+      setQuotImportLoading(false);
+    }
+  }
+
   async function handleSubmit() {
     setError("");
     if (!salesperson.trim()) { setError("Salesperson name is required."); return; }
@@ -995,7 +1058,15 @@ function NewOrderForm() {
                 <tbody>
                   <tr>
                     <td className="py-0.5 pr-6 text-right text-xs font-bold uppercase tracking-wider whitespace-nowrap" style={{ color: "var(--foreground)" }}>PO NUMBER:</td>
-                    <td className="py-0.5 text-right text-sm font-[family-name:var(--font-display)] tracking-wide" style={{ color: "var(--foreground)" }}>{orderNumber}</td>
+                    <td className="py-0.5 text-right text-sm font-[family-name:var(--font-display)] tracking-wide" style={{ color: "var(--foreground)" }}>
+                      <input
+                        type="text"
+                        value={orderNumber}
+                        onChange={(e) => setOrderNumber(e.target.value)}
+                        className="bg-transparent text-right font-[family-name:var(--font-display)] tracking-wide text-sm w-full border-0 outline-none hover:bg-[var(--input-bg)] focus:bg-[var(--input-bg)] transition-colors"
+                        style={{ color: "var(--foreground)", padding: "0 2px" }}
+                      />
+                    </td>
                   </tr>
                   <tr>
                     <td className="py-0.5 pr-6 text-right text-xs font-bold uppercase tracking-wider whitespace-nowrap" style={{ color: "var(--foreground)" }}>PO DATE:</td>
@@ -1014,6 +1085,34 @@ function NewOrderForm() {
                   </tr>
                 </tbody>
               </table>
+              {/* Import from Quotation */}
+              <div className="mt-3 flex flex-col items-end gap-2">
+                <button
+                  onClick={() => { setShowQuotImport(true); setQuotImportNumber(""); setQuotImportError(""); }}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[10px] uppercase tracking-wider cursor-pointer"
+                  style={{
+                    border: "1px solid var(--border)",
+                    color: "var(--muted)",
+                    fontFamily: "var(--font-body)",
+                    transition: "all 0.2s",
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent)"; e.currentTarget.style.color = "var(--foreground)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.color = "var(--muted)"; }}
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="16" y1="13" x2="8" y2="13" /><line x1="16" y1="17" x2="8" y2="17" />
+                  </svg>
+                  Import Quotation
+                </button>
+                {importedQuotation && (
+                  <span className="text-[10px] uppercase tracking-wider px-2 py-1"
+                    style={{ backgroundColor: "#22c55e15", color: "#22c55e", border: "1px solid #22c55e30", fontFamily: "var(--font-body)" }}>
+                    Imported from {importedQuotation}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
@@ -1287,7 +1386,7 @@ function NewOrderForm() {
           <table className="w-full text-sm">
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                {["#", "Product", "Category", "Qty", "Price/kg", "Weight", "Line Total", ""].map((h) => (
+                {["#", "Product", "Category", "Qty", "Wt/pc", "Price/pc", "Price/kg", "Weight", "Line Total", ""].map((h) => (
                   <th key={h} className="px-5 py-3 text-left text-xs font-medium uppercase tracking-widest text-muted whitespace-nowrap">
                     {h}
                   </th>
@@ -1297,7 +1396,7 @@ function NewOrderForm() {
             <tbody>
               {items.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-5 py-14 text-center">
+                  <td colSpan={10} className="px-5 py-14 text-center">
                     <div className="flex flex-col items-center gap-2">
                       <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: "var(--border)" }}>
                         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
@@ -1320,6 +1419,8 @@ function NewOrderForm() {
                       </td>
                       <td className="px-5 py-3 text-muted whitespace-nowrap">{item.category_name}</td>
                       <td className="px-5 py-3 text-foreground">{item.quantity.toLocaleString()}</td>
+                      <td className="px-5 py-3 text-muted">{item.weight_per_piece.toLocaleString(undefined, { minimumFractionDigits: 2 })} kg</td>
+                      <td className="px-5 py-3 text-muted">{"\u20B1"}{(item.weight_per_piece * item.price_per_kg).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                       <td className="px-5 py-3 text-muted">{"\u20B1"}{item.price_per_kg.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
                       <td className="px-5 py-3 text-muted">{weight.toLocaleString(undefined, { minimumFractionDigits: 2 })} kg</td>
                       <td className="px-5 py-3 text-foreground font-medium">{"\u20B1"}{lineTotal.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
@@ -1485,6 +1586,71 @@ function NewOrderForm() {
           </button>
         </div>
       </div>
+
+      {/* ── Quotation Import Modal ── */}
+      {showQuotImport && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(2px)" }}
+          onClick={() => setShowQuotImport(false)}>
+          <div className="w-full max-w-md mx-4 animate-fade-up outline-none"
+            style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--border)", boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}
+            onClick={(e) => e.stopPropagation()}>
+            <div className="px-6 pt-5 pb-4">
+              <h3 className="text-sm uppercase tracking-wider font-[family-name:var(--font-display)]"
+                style={{ color: "var(--accent)" }}>
+                Import from Quotation
+              </h3>
+              <p className="text-xs mt-2 leading-relaxed" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>
+                Enter an approved quotation number to import items, notes, and shipping into this order.
+              </p>
+            </div>
+            <div className="px-6 pb-4 space-y-3">
+              <div>
+                <label className="block text-[9px] uppercase tracking-[0.15em] mb-1.5" style={labelStyle}>
+                  Quotation Number
+                </label>
+                <input
+                  type="text"
+                  value={quotImportNumber}
+                  onChange={(e) => { setQuotImportNumber(e.target.value.toUpperCase()); setQuotImportError(""); }}
+                  placeholder="QT-XXXXXX"
+                  className="w-full px-3 py-2.5 text-sm outline-none uppercase"
+                  style={inputStyle}
+                  onFocus={(e) => (e.target.style.borderColor = "var(--accent)")}
+                  onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleQuotationImport(); }}
+                  autoFocus
+                />
+              </div>
+              {quotImportError && (
+                <p className="text-xs px-3 py-2"
+                  style={{ color: "var(--accent)", backgroundColor: "rgba(139,50,50,0.08)", fontFamily: "var(--font-body)" }}>
+                  {quotImportError}
+                </p>
+              )}
+            </div>
+            <div className="flex gap-3 px-6 pb-5">
+              <button
+                onClick={handleQuotationImport}
+                disabled={quotImportLoading}
+                className="flex-1 px-4 py-2.5 text-[11px] uppercase tracking-wider cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+                style={{ backgroundColor: "var(--btn-bg)", color: "var(--btn-text)", fontFamily: "var(--font-body)", transition: "background-color 0.2s" }}
+                onMouseEnter={(e) => { if (!quotImportLoading) (e.currentTarget as HTMLButtonElement).style.backgroundColor = "var(--btn-hover)"; }}
+                onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.backgroundColor = "var(--btn-bg)"; }}>
+                {quotImportLoading ? "Looking up..." : "Import"}
+              </button>
+              <button
+                onClick={() => setShowQuotImport(false)}
+                className="flex-1 px-4 py-2.5 text-[11px] uppercase tracking-wider cursor-pointer"
+                style={{ color: "var(--muted)", border: "1px solid var(--border)", fontFamily: "var(--font-body)", transition: "all 0.2s" }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "var(--foreground)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--muted)"; }}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         open={showCancelModal}

@@ -193,6 +193,60 @@ export type Database = {
           },
         ]
       }
+      stock_movements: {
+        Row: {
+          classification: string
+          created_at: string
+          id: string
+          movement_type: string
+          notes: string | null
+          performed_by: string
+          product_id: string
+          quantity: number
+          reference_id: string | null
+          warehouse_id: string
+        }
+        Insert: {
+          classification: string
+          created_at?: string
+          id?: string
+          movement_type: string
+          notes?: string | null
+          performed_by: string
+          product_id: string
+          quantity: number
+          reference_id?: string | null
+          warehouse_id: string
+        }
+        Update: {
+          classification?: string
+          created_at?: string
+          id?: string
+          movement_type?: string
+          notes?: string | null
+          performed_by?: string
+          product_id?: string
+          quantity?: number
+          reference_id?: string | null
+          warehouse_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_warehouse_id_fkey"
+            columns: ["warehouse_id"]
+            isOneToOne: false
+            referencedRelation: "warehouses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warehouse_stock: {
         Row: {
           classification: string
