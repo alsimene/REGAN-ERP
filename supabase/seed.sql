@@ -32,9 +32,12 @@ INSERT INTO categories (id, name, description) VALUES
 -- ── WAREHOUSES ──
 -- Each warehouse belongs to one company (1 company → N warehouses)
 INSERT INTO warehouses (id, name, location, company_id) VALUES
-  ('b0000000-0000-4000-8000-000000000001', 'Warehouse 1', 'Main Yard', 'd715a70c-6bf7-41bf-bd82-6f0eec57b26d'),
-  ('b0000000-0000-4000-8000-000000000002', 'Warehouse 2', 'North Depot', 'e52e9c2a-623c-4d49-87c0-51e1cadff60d'),
-  ('b0000000-0000-4000-8000-000000000003', 'Warehouse 3', 'South Depot', '3082b68c-24cc-4940-ad97-f1c889cd41f3');
+  ('b0000000-0000-4000-8000-000000000001', 'Kirin Main',   'Main Branch',     'd715a70c-6bf7-41bf-bd82-6f0eec57b26d'),
+  ('b0000000-0000-4000-8000-000000000002', 'Regan Main',   'Main Branch',     'e52e9c2a-623c-4d49-87c0-51e1cadff60d'),
+  ('b0000000-0000-4000-8000-000000000003', 'Supremo Main', 'Main Branch',     '3082b68c-24cc-4940-ad97-f1c889cd41f3'),
+  ('b0000000-0000-4000-8000-000000000004', 'Kirin Yard',   'Secondary Yard',  'd715a70c-6bf7-41bf-bd82-6f0eec57b26d'),
+  ('b0000000-0000-4000-8000-000000000005', 'Regan Yard',   'Secondary Yard',  'e52e9c2a-623c-4d49-87c0-51e1cadff60d'),
+  ('b0000000-0000-4000-8000-000000000006', 'Supremo Yard', 'Secondary Yard',  '3082b68c-24cc-4940-ad97-f1c889cd41f3');
 
 -- ============================================================
 -- EQUAL ANGLE BARS (AB-001 to AB-075) — Category: Angle Bars
@@ -680,6 +683,20 @@ FROM (SELECT id FROM products ORDER BY random() LIMIT 180) p
 CROSS JOIN (VALUES ('C1'), ('C2'), ('C3')) AS cls(classification)
 ON CONFLICT DO NOTHING;
 
+-- Yard warehouses — ~30% of main stock gets some inventory in the yard
+INSERT INTO warehouse_stock (product_id, warehouse_id, classification, quantity)
+SELECT ws.product_id,
+  (CASE
+    WHEN ws.warehouse_id = 'b0000000-0000-4000-8000-000000000001' THEN 'b0000000-0000-4000-8000-000000000004'
+    WHEN ws.warehouse_id = 'b0000000-0000-4000-8000-000000000002' THEN 'b0000000-0000-4000-8000-000000000005'
+    WHEN ws.warehouse_id = 'b0000000-0000-4000-8000-000000000003' THEN 'b0000000-0000-4000-8000-000000000006'
+  END)::uuid,
+  ws.classification,
+  greatest(1, (ws.quantity * (10 + floor(random() * 30)::int) / 100))
+FROM warehouse_stock ws
+WHERE ws.quantity > 0 AND random() < 0.3
+ON CONFLICT DO NOTHING;
+
 -- ============================================================
 -- STOCK MOVEMENTS (historical seed data)
 -- ~5 movements per warehouse_stock row, spread over 90 days
@@ -728,6 +745,6 @@ FROM movement_gen;
 --   Tubings:             9  (TU-001 to TU-009)
 -- Companies:            3   (Kirin, Regan, Supremo)
 -- Clients:              11
--- Warehouses:           3   (W1→Kirin, W2→Regan, W3→Supremo)
--- Warehouse stock:      ~1890 rows across ~630 products
+-- Warehouses:           6   (Main + Yard per company)
+-- Warehouse stock:      ~1890+ rows across ~630 products
 -- ============================================================
