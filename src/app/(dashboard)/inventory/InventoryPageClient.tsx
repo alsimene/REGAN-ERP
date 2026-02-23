@@ -11,7 +11,6 @@ import ProductToolbar from "./views/ProductTableView/ProductToolbar";
 import ProductTableView from "./views/ProductTableView/ProductTableView";
 import LowStockModal from "./shared/LowStockModal";
 import type { ColumnOption, StatCard, ProductSummary, PageParams, FilterOptions } from "./types";
-import { PAGE_SIZE_OPTIONS } from "./types";
 
 interface Props {
   stats: StatCard[];

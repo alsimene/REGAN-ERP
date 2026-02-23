@@ -98,60 +98,6 @@ export type Database = {
         }
         Relationships: []
       }
-      stock_movements: {
-        Row: {
-          id: string
-          product_id: string
-          warehouse_id: string
-          movement_type: string
-          classification: string
-          quantity: number
-          performed_by: string
-          notes: string | null
-          reference_id: string | null
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          product_id: string
-          warehouse_id: string
-          movement_type: string
-          classification: string
-          quantity: number
-          performed_by: string
-          notes?: string | null
-          reference_id?: string | null
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          product_id?: string
-          warehouse_id?: string
-          movement_type?: string
-          classification?: string
-          quantity?: number
-          performed_by?: string
-          notes?: string | null
-          reference_id?: string | null
-          created_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "stock_movements_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "stock_movements_warehouse_id_fkey"
-            columns: ["warehouse_id"]
-            isOneToOne: false
-            referencedRelation: "warehouses"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       products: {
         Row: {
           category_id: string

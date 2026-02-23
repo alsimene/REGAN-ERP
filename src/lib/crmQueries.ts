@@ -13,7 +13,6 @@ import {
   CrmCompany,
   CrmOpportunity,
   CrmActivity,
-  OpportunityStage,
   SavedQuotation,
   SavedQuotationItem,
   StageConfig,

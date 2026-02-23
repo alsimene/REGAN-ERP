@@ -26,6 +26,7 @@ import { ReactNode } from "react";
      />
    ────────────────────────────────────────── */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export type ColumnDef<T> = {
   key: string;
   header: string | ReactNode;

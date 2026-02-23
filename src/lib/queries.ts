@@ -583,7 +583,7 @@ export async function getProductsPage({
   pageSize,
   sortBy,
   sortDir,
-  search,
+  search: _search,
   parsed,
   nameFilter,
   sizeFilter,

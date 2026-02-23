@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, ReactNode } from "react";
-import type { LowStockItem, Classification } from "../types";
+import type { LowStockItem } from "../types";
 import { classColor, formatNumber } from "../utils";
 import { icons } from "../icons";
 import DataTable, { type ColumnDef } from "@/app/components/DataTable";

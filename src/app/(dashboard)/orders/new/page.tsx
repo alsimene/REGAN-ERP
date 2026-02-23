@@ -531,6 +531,7 @@ function NewOrderForm() {
       setUploadResult({ matched: matched.length, unmatched });
       setError("");
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [products, marketPrices, itemKey]
   );
 
@@ -809,6 +810,7 @@ function NewOrderForm() {
         setExtracting(false);
       }
     },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [clients, products, marketPrices, itemKey, selectedClientId, notes],
   );
 

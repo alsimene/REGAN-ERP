@@ -18,7 +18,7 @@ export function classColor(c: Classification): string {
 /* ── Decimal → Fraction (nearest 1/16) ── */
 function toFraction(decimal: number): string {
   const whole = Math.floor(decimal);
-  let remainder = decimal - whole;
+  const remainder = decimal - whole;
   if (remainder < 0.01) return whole === 0 ? '0"' : `${whole}"`;
 
   // Snap to nearest 1/16
