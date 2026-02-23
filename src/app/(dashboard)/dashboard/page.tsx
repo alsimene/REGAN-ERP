@@ -359,7 +359,6 @@ export default async function DashboardPage() {
                   </div>
                   <div className="flex justify-between mt-1">
                     <span className="text-[10px] text-muted">{item.stock.toLocaleString()} units</span>
-                    <span className="text-[10px] text-muted">{item.capacity.toLocaleString()} cap</span>
                   </div>
                 </div>
               ))

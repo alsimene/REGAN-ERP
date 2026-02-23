@@ -46,7 +46,7 @@ export async function getRecentOrders(_limit = 5) {
 
 // STUBBED — view product_stock_summary does not exist
 export async function getInventoryStatus(_limit = 5) {
-  return [] as { name: string; stock: number; capacity: number }[];
+  return [] as { name: string; stock: number }[];
 }
 
 /* ──────────────────────────────────────────
@@ -115,7 +115,7 @@ export function computeOrderStats(orders: { status: string }[]) {
 
 // STUBBED — RPC update_order_status does not exist
 export async function updateOrderStatus(
-  _orderId: number,
+  _orderId: string,
   _newStatus: string,
   _performedBy?: string,
   _performedById?: string,
@@ -126,8 +126,8 @@ export async function updateOrderStatus(
 
 // STUBBED — RPC record_delivery does not exist
 export async function recordDelivery(
-  _orderId: number,
-  _deliveries: { order_item_id: number; qty: number }[],
+  _orderId: string,
+  _deliveries: { order_item_id: string; qty: number }[],
   _notes?: string,
   _deliveredBy?: string,
   _processedBy?: string,
@@ -136,7 +136,7 @@ export async function recordDelivery(
 }
 
 // STUBBED — table deliveries does not exist
-export async function getDeliveryHistory(_orderId: number) {
+export async function getDeliveryHistory(_orderId: string) {
   return [];
 }
 
@@ -193,7 +193,7 @@ export function computeCarrierPerformance(shipments: { carrier: string; status: 
 // STUBBED — RPC get_fast_moving_items does not exist
 export async function getFastMovingItems(_limit = 20, _days = 30, _companyId?: string) {
   return [] as {
-    product_id: number;
+    product_id: string;
     sku: string;
     product_name: string;
     category_name: string;
@@ -230,7 +230,7 @@ export async function getCategoriesWithCounts(_companyId?: string) {
   );
 
   const cats = data ?? [];
-  const result: { id: number; name: string; product_count: number }[] = [];
+  const result: { id: string; name: string; product_count: number }[] = [];
 
   for (const cat of cats) {
     const count = await unwrapCount(
@@ -247,23 +247,45 @@ export async function getCategoriesWithCounts(_companyId?: string) {
 
 // STUBBED — views product_stock_summary/company_stock_summary do not exist
 export async function searchProducts(_query: string, _limit = 50, _companyId?: string) {
-  return [] as { productId: number; sku: string; name: string; category: string; c1: number; c2: number; c3: number; totalStock: number; capacity: number }[];
+  return [] as { productId: string; sku: string; name: string; category: string; c1: number; c2: number; c3: number; totalStock: number }[];
 }
 
-// STUBBED — table warehouse_stock does not exist
-export async function getProductWarehouseDetail(_productId: number, _companyId?: string) {
-  return [] as { warehouse: string; c1: number; c2: number; c3: number }[];
+// LIVE — warehouse_stock + warehouses + companies
+export async function getProductWarehouseDetail(productId: string, _companyId?: string) {
+  const data = await unwrap(
+    supabase
+      .from("warehouse_stock")
+      .select("warehouse_id, classification, quantity, warehouses(name, companies(name))")
+      .eq("product_id", productId),
+    "getProductWarehouseDetail",
+  );
+
+  if (!data || data.length === 0) return [];
+
+  // Group by warehouse — aggregate C1/C2/C3
+  const map = new Map<string, { warehouse: string; company: string; c1: number; c2: number; c3: number }>();
+  for (const row of data) {
+    const wh = row.warehouses as unknown as { name: string; companies: { name: string } };
+    const whId = row.warehouse_id;
+    const existing = map.get(whId) ?? { warehouse: wh.name, company: wh.companies?.name ?? "", c1: 0, c2: 0, c3: 0 };
+    if (row.classification === "C1") existing.c1 += row.quantity;
+    else if (row.classification === "C2") existing.c2 += row.quantity;
+    else if (row.classification === "C3") existing.c3 += row.quantity;
+    map.set(whId, existing);
+  }
+
+  return [...map.values()];
 }
 
 // STUBBED — view low_stock_alerts / RPC get_low_stock_alerts do not exist
 export async function getAllLowStockAlerts(_companyId?: string) {
-  return [] as { productId: number; sku: string; name: string; category: string; c1: number; c2: number; c3: number; totalStock: number; capacity: number; pct: number }[];
+  return [] as { productId: string; sku: string; name: string; category: string; c1: number; c2: number; c3: number; totalStock: number; pct: number }[];
 }
 
 export function formatInventoryCSV(
-  items: { sku: string; name: string; category?: string; c1: number; c2: number; c3: number; totalStock: number; capacity: number }[],
+  items: { sku: string; name: string; category?: string; c1: number; c2: number; c3: number; totalStock: number }[],
 ): string {
-  const headers = ["SKU", "Product", "Category", "C1", "C2", "C3", "Total", "Capacity", "Cap%"];
+  const headers = ["SKU", "Product", "Category", "C1", "C2", "C3", "Total"];
   const rows = items.map((i) => [
     i.sku,
     `"${i.name.replace(/"/g, '""')}"`,
@@ -272,8 +294,6 @@ export function formatInventoryCSV(
     i.c2,
     i.c3,
     i.totalStock,
-    i.capacity,
-    i.capacity > 0 ? Math.round((i.totalStock / i.capacity) * 100) + "%" : "N/A",
   ].join(","));
   return [headers.join(","), ...rows].join("\n");
 }
@@ -289,7 +309,6 @@ type InventoryItem = {
   kgPerM: number;
   weightPerLength: number;
   weightPer20ft?: number;
-  capacity: number;
   unit: string;
   warehouses: { warehouse: string; c1: number; c2: number; c3: number }[];
 };
@@ -331,7 +350,7 @@ export async function getInventoryByCategory(categoryName: string): Promise<Inve
   const products = await unwrap(
     supabase
       .from("products")
-      .select("id, sku, name, specs, kg_per_m, weight_per_length, capacity, unit, length_m, categories(name)")
+      .select("id, sku, name, specs, unit, categories(name)")
       .eq("category_id", catData.id)
       .order("sku")
       .limit(2000),
@@ -355,11 +374,10 @@ export async function getInventoryByCategory(categoryName: string): Promise<Inve
           : "—",
       thickness: String(specs.thickness_mm ?? "—"),
       flangeThickness: specs.flange_thickness_mm ? String(specs.flange_thickness_mm) : undefined,
-      length: p.length_m ? Number(p.length_m) : undefined,
-      kgPerM: Number(p.kg_per_m ?? 0),
-      weightPerLength: Number(p.weight_per_length ?? 0),
+      length: specs.length_m ? Number(specs.length_m) : undefined,
+      kgPerM: Number(specs.kg_per_m ?? 0),
+      weightPerLength: Number(specs.weight_per_length ?? 0),
       weightPer20ft: specs.weight_per_20ft ? Number(specs.weight_per_20ft) : undefined,
-      capacity: p.capacity ?? 0,
       unit: p.unit ?? "pcs",
       warehouses: [], // STUBBED — warehouse_stock does not exist
     };
@@ -370,21 +388,74 @@ export async function getInventoryByCategory(categoryName: string): Promise<Inve
    Inventory v2
    ────────────────────────────────────────── */
 
-// STUBBED — views product_stock_summary/company_stock_summary do not exist
+// LIVE — products + categories + warehouse_stock
 export async function getAllProducts(_companyId?: string) {
-  return [] as {
-    productId: number; sku: string; name: string; category: string;
-    sizeMm: string | null; sizeInch: string | null; thicknessMm: string | null;
-    flangeThicknessMm: string | null; weightPer20ft: number | null;
-    lengthM: number | null; kgPerM: number | null; weightPerLength: number | null;
-    capacity: number; unit: string;
-    c1: number; c2: number; c3: number; totalStock: number;
-  }[];
+  const [data, stockRows] = await Promise.all([
+    unwrap(
+      supabase
+        .from("products")
+        .select("id, sku, name, specs, unit, status, categories(name)")
+        .order("sku")
+        .limit(5000),
+      "getAllProducts",
+    ),
+    unwrap(
+      supabase
+        .from("warehouse_stock")
+        .select("product_id, classification, quantity, warehouses(name, companies(name))"),
+      "getAllProducts.stock",
+    ),
+  ]);
+
+  if (!data || data.length === 0) return [];
+
+  // Aggregate stock per product from raw warehouse_stock rows
+  const stockMap = new Map<string, { c1: number; c2: number; c3: number; totalStock: number; companies: Set<string> }>();
+  for (const row of stockRows ?? []) {
+    const pid = row.product_id;
+    const qty = row.quantity ?? 0;
+    const wh = row.warehouses as unknown as { name: string; companies: { name: string } } | null;
+    const companyName = wh?.companies?.name ?? "";
+    const entry = stockMap.get(pid) ?? { c1: 0, c2: 0, c3: 0, totalStock: 0, companies: new Set<string>() };
+    if (row.classification === "C1") entry.c1 += qty;
+    else if (row.classification === "C2") entry.c2 += qty;
+    else if (row.classification === "C3") entry.c3 += qty;
+    entry.totalStock += qty;
+    if (companyName && qty > 0) entry.companies.add(companyName);
+    stockMap.set(pid, entry);
+  }
+
+  return data.map((p: Record<string, unknown>) => {
+    const specs = (p.specs ?? {}) as Record<string, unknown>;
+    const cat = p.categories as { name: string } | null;
+    const stock = stockMap.get(p.id as string);
+    return {
+      productId: p.id as string,
+      sku: p.sku as string,
+      name: p.name as string,
+      category: cat?.name ?? "Unknown",
+      sizeMm: specs.size_mm ? String(specs.size_mm) : null,
+      sizeInch: specs.size_inch ? String(specs.size_inch) : null,
+      thicknessMm: specs.thickness_mm ? String(specs.thickness_mm) : null,
+      flangeThicknessMm: specs.flange_thickness_mm ? String(specs.flange_thickness_mm) : null,
+      weightPer20ft: specs.weight_per_20ft ? Number(specs.weight_per_20ft) : null,
+      lengthM: specs.length_m ? Number(specs.length_m) : null,
+      kgPerM: specs.kg_per_m ? Number(specs.kg_per_m) : null,
+      weightPerLength: specs.weight_per_length ? Number(specs.weight_per_length) : null,
+      unit: (p.unit as string) ?? "pcs",
+      status: (p.status as boolean) ?? true,
+      c1: stock?.c1 ?? 0,
+      c2: stock?.c2 ?? 0,
+      c3: stock?.c3 ?? 0,
+      totalStock: stock?.totalStock ?? 0,
+      companies: stock ? [...stock.companies].sort() : [],
+    };
+  });
 }
 
 // STUBBED — table stock_movements does not exist
-export async function getProductMovements(_productId: number, _limit = 10) {
-  return [] as { id: number; type: string; classification: string; quantity: number; warehouse: string; performedBy: string | null; createdAt: string; notes: string | null; referenceId: string | null }[];
+export async function getProductMovements(_productId: string, _limit = 10) {
+  return [] as { id: string; type: string; classification: string; quantity: number; warehouse: string; performedBy: string | null; createdAt: string; notes: string | null; referenceId: string | null }[];
 }
 
 /* ──────────────────────────────────────────
@@ -392,13 +463,13 @@ export async function getProductMovements(_productId: number, _limit = 10) {
    ────────────────────────────────────────── */
 
 // STUBBED — table client_warehouses does not exist
-export async function getClientWarehouses(_clientId: number) {
+export async function getClientWarehouses(_clientId: string) {
   return [];
 }
 
 // STUBBED — table client_warehouses does not exist
 export async function createClientWarehouse(_warehouse: {
-  client_id: number;
+  client_id: string;
   name: string;
   address?: string;
   city?: string;
@@ -453,7 +524,7 @@ export async function getProductsForOrder() {
     unwrap(
       supabase
         .from("products")
-        .select("id, sku, name, category_id, weight_per_length, specs, categories(name)")
+        .select("id, sku, name, category_id, specs, categories(name)")
         .order("sku"),
       "getProductsForOrder.products",
     ),
@@ -475,7 +546,7 @@ export async function getProductsForOrder() {
         name: p.name,
         category_id: p.category_id,
         category_name: (p.categories as unknown as { name: string })?.name ?? "",
-        weight_per_piece: Number(p.weight_per_length ?? 0),
+        weight_per_piece: Number(specs.weight_per_length ?? 0),
         size: specs.size_inch
           ? String(specs.size_inch).replace(/ x /gi, "  ×  ")
           : specs.size_mm
@@ -496,21 +567,21 @@ export async function getNextOrderNumber() {
 
 // STUBBED — view current_market_prices does not exist
 export async function getMarketPrices() {
-  return [] as { category_id: number | null; category_name: string | null; price_per_kg: number | null; effective_date: string | null; price_source: string | null }[];
+  return [] as { category_id: string | null; category_name: string | null; price_per_kg: number | null; effective_date: string | null; price_source: string | null }[];
 }
 
 // STUBBED — RPC create_order_with_items does not exist
 export async function createOrder(_order: {
   orderNumber: string;
-  clientId: number;
+  clientId: string;
   salesperson: string;
   notes: string;
   createdBy?: string;
-  clientWarehouseId?: number | null;
-  supplierId?: number | null;
+  clientWarehouseId?: string | null;
+  supplierId?: string | null;
   items: {
-    product_id: number;
-    warehouse_id: number;
+    product_id: string;
+    warehouse_id: string;
     classification: string;
     quantity: number;
     price_per_kg: number;
@@ -522,8 +593,8 @@ export async function createOrder(_order: {
 
 // STUBBED — RPC update_order_item_prices does not exist
 export async function updateOrderItemPrices(
-  _orderId: number,
-  _items: { item_id: number; price_per_kg: number }[],
+  _orderId: string,
+  _items: { item_id: string; price_per_kg: number }[],
   _updatedBy?: string,
 ) {
   return { subtotal: 0, tax: 0, total: 0 };
@@ -540,7 +611,7 @@ export async function getAllMarketPrices() {
 
 // STUBBED — RPC update_market_price does not exist
 export async function updateMarketPrice(
-  _categoryId: number,
+  _categoryId: string,
   _price: number,
   _notes?: string,
   _updatedBy?: string,
@@ -550,7 +621,7 @@ export async function updateMarketPrice(
 
 // STUBBED — table market_prices does not exist
 export async function getMarketPriceHistory(_limit = 10) {
-  return [] as { id: number; category: string; price: number; date: string; isActive: boolean | null; notes: string }[];
+  return [] as { id: string; category: string; price: number; date: string; isActive: boolean | null; notes: string }[];
 }
 
 // LIVE — categories table exists
@@ -566,12 +637,100 @@ export async function getCategoriesWithIds() {
 }
 
 /* ──────────────────────────────────────────
+   Product Catalog (Inventory3)
+   ────────────────────────────────────────── */
+
+// LIVE — products + categories tables exist
+export async function getAllProductsCatalog() {
+  const data = await unwrap(
+    supabase
+      .from("products")
+      .select("id, sku, name, category_id, specs, unit, status, categories(name)")
+      .order("sku"),
+    "getAllProductsCatalog",
+  );
+
+  return (data ?? []).map((p: Record<string, unknown>) => {
+    const specs = (p.specs ?? {}) as Record<string, unknown>;
+    const cat = p.categories as { name: string } | null;
+    const sizeMm = specs.size_mm as string | undefined;
+    const sizeInch = specs.size_inch as string | undefined;
+    const thicknessMm = specs.thickness_mm as number | undefined;
+    const thicknessInch = specs.thickness_inch as number | undefined;
+    const flangeInch = specs.flange_thickness_inch as number | undefined;
+    const lengthM = specs.length_m as number | null;
+
+    // Build description from specs (inches for ASTM, mm for others)
+    const odMm = specs.od_mm as number | undefined;
+    const flangeWidthInch = specs.flange_width_inch as number | undefined;
+    const flangeMm = specs.flange_thickness_mm as number | undefined;
+    const parts: string[] = [];
+    if (sizeInch) {
+      if (sizeInch.includes(' x ')) {
+        // Size already in "depth x flange" fractional format (e.g., "3 x 1-3/8")
+        const [depth, flange] = sizeInch.split(' x ');
+        parts.push(`${depth}" x ${flange}"`);
+      } else if (flangeWidthInch !== undefined) {
+        parts.push(`${sizeInch}" x ${flangeWidthInch}"`);
+      } else {
+        parts.push(`${sizeInch}"`);
+      }
+    } else if (sizeMm) {
+      parts.push(`${sizeMm} mm`);
+    }
+    if (odMm !== undefined) parts.push(`OD ${odMm}mm`);
+    if (thicknessInch !== undefined) {
+      parts.push(`${thicknessInch}" thick`);
+    } else if (thicknessMm !== undefined) {
+      parts.push(`${thicknessMm} mm thick`);
+    }
+    if (flangeInch !== undefined) parts.push(`${flangeInch}" flange`);
+    else if (flangeMm !== undefined) parts.push(`${flangeMm}mm flange`);
+    if (lengthM) parts.push(`${lengthM}m length`);
+
+    return {
+      id: p.id as string,
+      sku: p.sku as string,
+      name: p.name as string,
+      category: cat?.name ?? "Unknown",
+      description: parts.join(", "),
+      unit: (p.unit as string) ?? "pcs",
+      enabled: (p.status as boolean) ?? true,
+    };
+  });
+}
+
+// LIVE — update product status (enable/disable)
+export async function updateProductStatus(productId: string, status: boolean) {
+  const { error } = await supabase
+    .from("products")
+    .update({ status })
+    .eq("id", productId);
+  if (error) {
+    console.error("[query] updateProductStatus:", error.message);
+    throw error;
+  }
+}
+
+// LIVE — categories table exists
+export async function getCatalogCategories() {
+  const data = await unwrap(
+    supabase
+      .from("categories")
+      .select("name")
+      .order("name"),
+    "getCatalogCategories",
+  );
+  return (data ?? []).map((c: { name: string }) => c.name);
+}
+
+/* ──────────────────────────────────────────
    Dashboard — New Queries
    ────────────────────────────────────────── */
 
 // STUBBED — view low_stock_alerts / RPC get_low_stock_alerts do not exist
 export async function getLowStockAlerts(_limit = 5, _companyId?: string) {
-  return [] as { sku: string; name: string; category: string; stock: number; capacity: number; pct: number }[];
+  return [] as { sku: string; name: string; category: string; stock: number; pct: number }[];
 }
 
 // STUBBED — view order_summary does not exist

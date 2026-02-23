@@ -2,16 +2,14 @@
 
 import { useState, useRef, useEffect } from "react";
 import { icons } from "../../icons";
-import type { SizeUnit, ColumnDef } from "../../types";
+import type { SizeUnit, ColumnOption } from "../../types";
 
 interface Props {
   sizeUnit: SizeUnit;
   onSizeUnitChange: (unit: SizeUnit) => void;
-  columns: ColumnDef[];
+  columns: ColumnOption[];
   hiddenColumns: Set<string>;
   onToggleColumn: (key: string) => void;
-  searchQuery: string;
-  onSearchChange: (q: string) => void;
 }
 
 const unitOptions: { value: SizeUnit; label: string }[] = [
@@ -20,7 +18,7 @@ const unitOptions: { value: SizeUnit; label: string }[] = [
   { value: "mm", label: "MM" },
 ];
 
-export default function ProToolbar({ sizeUnit, onSizeUnitChange, columns, hiddenColumns, onToggleColumn, searchQuery, onSearchChange }: Props) {
+export default function ProductToolbar({ sizeUnit, onSizeUnitChange, columns, hiddenColumns, onToggleColumn }: Props) {
   const [colOpen, setColOpen] = useState(false);
   const colRef = useRef<HTMLDivElement>(null);
 
@@ -35,40 +33,7 @@ export default function ProToolbar({ sizeUnit, onSizeUnitChange, columns, hidden
   const hiddenCount = hiddenColumns.size;
 
   return (
-    <div className="px-4 py-3 flex items-center gap-3" style={{ borderBottom: "1px solid var(--border)" }}>
-      {/* Search */}
-      <div className="relative flex-1 max-w-sm">
-        <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted pointer-events-none">{icons.search}</span>
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => onSearchChange(e.target.value)}
-          placeholder="e.g. equal angle 20x20 2.0"
-          className="w-full py-2 pl-9 pr-8 text-[13px]"
-          style={{
-            backgroundColor: "transparent",
-            border: "1px solid var(--border)",
-            color: "var(--foreground)",
-            outline: "none",
-            fontFamily: "var(--font-body)",
-            transition: "border-color 0.15s ease",
-          }}
-          onFocus={(e) => (e.currentTarget.style.borderColor = "var(--foreground)")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "var(--border)")}
-        />
-        {searchQuery && (
-          <button
-            onClick={() => onSearchChange("")}
-            className="absolute right-2 top-1/2 -translate-y-1/2 cursor-pointer text-muted"
-            style={{ transition: "color 0.15s ease" }}
-            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--foreground)")}
-            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--muted)")}
-          >
-            {icons.x}
-          </button>
-        )}
-      </div>
-
+    <div className="flex items-center gap-3">
       {/* Unit toggle */}
       <div className="flex items-center" style={{ border: "1px solid var(--border)" }}>
         {unitOptions.map((opt) => (

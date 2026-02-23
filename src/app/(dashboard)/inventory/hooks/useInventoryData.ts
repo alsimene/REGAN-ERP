@@ -1,14 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   getInventoryStats,
   getCategoriesWithCounts,
   getAllProducts,
   getProductWarehouseDetail,
   getProductMovements,
+  getFastMovingItems,
+  getAllLowStockAlerts,
 } from "@/lib/queries";
-import type { ProductSummary, StatCard, CategoryWithCount, WarehouseBreakdown, StockMovement } from "../types";
+import type { ProductSummary, StatCard, CategoryWithCount, WarehouseBreakdown, StockMovement, FastMovingItem, LowStockItem } from "../types";
 
 export function useInventoryData() {
   const [stats, setStats] = useState<StatCard[]>([]);
@@ -25,7 +27,7 @@ export function useInventoryData() {
         setLoading(false);
       })
       .catch((err) => {
-        console.error("Inventory2 initial load error:", err);
+        console.error("Inventory initial load error:", err);
         setLoading(false);
       });
   }, []);
@@ -33,7 +35,7 @@ export function useInventoryData() {
   return { stats, categories, allProducts, loading };
 }
 
-export function useProductDetail(productId: number | null) {
+export function useProductDetail(productId: string | null) {
   const [warehouses, setWarehouses] = useState<WarehouseBreakdown[]>([]);
   const [movements, setMovements] = useState<StockMovement[]>([]);
   const [loading, setLoading] = useState(false);
@@ -55,4 +57,35 @@ export function useProductDetail(productId: number | null) {
   }, [productId]);
 
   return { warehouses, movements, loading };
+}
+
+export function useFastMovingItems() {
+  const [items, setItems] = useState<FastMovingItem[]>([]);
+  const [days, setDays] = useState(30);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setLoading(true);
+    getFastMovingItems(20, days)
+      .then(setItems)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [days]);
+
+  return { items, days, setDays, loading };
+}
+
+export function useLowStockAlerts() {
+  const [items, setItems] = useState<LowStockItem[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const load = useCallback(() => {
+    setLoading(true);
+    getAllLowStockAlerts()
+      .then(setItems)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  return { items, loading, load };
 }

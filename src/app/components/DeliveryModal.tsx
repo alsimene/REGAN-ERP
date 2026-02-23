@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 
 interface DeliveryItem {
-  id: number;
+  id: string;
   sku: string;
   name: string;
   quantity: number;
@@ -14,7 +14,7 @@ interface DeliveryModalProps {
   open: boolean;
   items: DeliveryItem[];
   saving: boolean;
-  onSubmit: (deliveries: { order_item_id: number; qty: number }[], notes: string) => void;
+  onSubmit: (deliveries: { order_item_id: string; qty: number }[], notes: string) => void;
   onCancel: () => void;
 }
 
@@ -26,9 +26,9 @@ export default function DeliveryModal({
   onCancel,
 }: DeliveryModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
-  const [quantities, setQuantities] = useState<Record<number, string>>({});
+  const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [notes, setNotes] = useState("");
-  const [errors, setErrors] = useState<Record<number, string>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const [showDiscardWarning, setShowDiscardWarning] = useState(false);
 
   // Split items: pending vs completed
@@ -54,7 +54,7 @@ export default function DeliveryModal({
   // Reset when modal opens
   useEffect(() => {
     if (open) {
-      const initial: Record<number, string> = {};
+      const initial: Record<string, string> = {};
       for (const item of items) {
         initial[item.id] = "";
       }
@@ -88,7 +88,7 @@ export default function DeliveryModal({
   if (!open) return null;
 
   // Build remaining map for quick lookup
-  const remainingMap: Record<number, number> = {};
+  const remainingMap: Record<string, number> = {};
   for (const item of pendingItems) {
     remainingMap[item.id] = item.quantity - item.delivered_qty;
   }
@@ -98,7 +98,7 @@ export default function DeliveryModal({
   );
 
   // Validate a single item
-  function validateItem(itemId: number, val: number): string | null {
+  function validateItem(itemId: string, val: number): string | null {
     const remaining = remainingMap[itemId];
     if (remaining === undefined) return null;
     if (val < 0) return "Cannot be negative";
@@ -115,7 +115,7 @@ export default function DeliveryModal({
   const deliveringCount = Object.values(parsedQuantities).filter((q) => q > 0).length;
   const deliveringTotal = Object.values(parsedQuantities).reduce((s, q) => s + q, 0);
 
-  function handleQuantityChange(itemId: number, rawValue: string) {
+  function handleQuantityChange(itemId: string, rawValue: string) {
     setQuantities((prev) => ({ ...prev, [itemId]: rawValue }));
 
     // Real-time validation
@@ -128,7 +128,7 @@ export default function DeliveryModal({
     setErrors((prev) => ({ ...prev, [itemId]: error ?? "" }));
   }
 
-  function handleQuantityBlur(itemId: number) {
+  function handleQuantityBlur(itemId: string) {
     const raw = quantities[itemId] ?? "";
     const val = parseInt(raw, 10);
     const remaining = remainingMap[itemId] ?? 0;
@@ -146,8 +146,8 @@ export default function DeliveryModal({
   }
 
   function handleFillAll() {
-    const filled: Record<number, string> = { ...quantities };
-    const cleared: Record<number, string> = {};
+    const filled: Record<string, string> = { ...quantities };
+    const cleared: Record<string, string> = {};
     for (const item of pendingItems) {
       const remaining = item.quantity - item.delivered_qty;
       if (remaining > 0) {
@@ -160,8 +160,8 @@ export default function DeliveryModal({
   }
 
   function handleClearAll() {
-    const cleared: Record<number, string> = { ...quantities };
-    const clearedErrors: Record<number, string> = {};
+    const cleared: Record<string, string> = { ...quantities };
+    const clearedErrors: Record<string, string> = {};
     for (const item of pendingItems) {
       cleared[item.id] = "";
       clearedErrors[item.id] = "";
@@ -173,7 +173,7 @@ export default function DeliveryModal({
   function handleSubmit() {
     // Final validation pass
     let valid = true;
-    const newErrors: Record<number, string> = {};
+    const newErrors: Record<string, string> = {};
     for (const item of pendingItems) {
       const val = parsedQuantities[item.id] ?? 0;
       if (val <= 0) continue;
@@ -189,7 +189,7 @@ export default function DeliveryModal({
 
     const deliveries = Object.entries(parsedQuantities)
       .filter(([, qty]) => qty > 0)
-      .map(([id, qty]) => ({ order_item_id: Number(id), qty }));
+      .map(([id, qty]) => ({ order_item_id: id, qty }));
     onSubmit(deliveries, notes.trim());
   }
 

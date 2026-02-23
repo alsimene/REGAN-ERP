@@ -5,8 +5,8 @@ export interface OrderDraft {
   salesperson: string;
   notes: string;
   clientMode: "select" | "new";
-  selectedClientId: number | "";
-  selectedWarehouseId?: number;
+  selectedClientId: string | "";
+  selectedWarehouseId?: string;
   newClient: { name: string; contact_person: string; phone: string; city: string };
   clientName: string;
   items: LineItem[];
@@ -15,10 +15,10 @@ export interface OrderDraft {
 
 export type LineItem = {
   key: number;
-  product_id: number;
+  product_id: string;
   product_name: string;
   sku: string;
-  warehouse_id: number;
+  warehouse_id: string;
   warehouse_name: string;
   classification: string;
   quantity: number;

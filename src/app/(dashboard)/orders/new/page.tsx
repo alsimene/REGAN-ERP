@@ -26,17 +26,17 @@ import LoadingOverlay from "@/app/components/LoadingOverlay";
 import { useAuth } from "@/app/context/AuthContext";
 import type { ExtractedPurchaseOrder, ExtractedLineItem } from "@/lib/poExtractionSchema";
 
-type Client = { id: number; name: string; contact_person: string | null; phone: string | null; email: string | null; address: string | null; city: string | null };
-type ClientWarehouse = { id: number; client_id: number; name: string; address: string | null; city: string | null; contact_person: string | null; phone: string | null; is_default: boolean };
+type Client = { id: string; name: string; contact_person: string | null; phone: string | null; email: string | null; address: string | null; city: string | null };
+type ClientWarehouse = { id: string; client_id: string; name: string; address: string | null; city: string | null; contact_person: string | null; phone: string | null; is_default: boolean };
 type Product = {
-  id: number; sku: string; name: string;
-  category_id: number; category_name: string;
+  id: string; sku: string; name: string;
+  category_id: string; category_name: string;
   weight_per_piece: number;
   size: string; thickness: string;
 };
 type LineItem = {
   key: number;
-  product_id: number;
+  product_id: string;
   product_name: string;
   sku: string;
   category_name: string;
@@ -84,28 +84,28 @@ function NewOrderForm() {
 
   // Client
   const [clients, setClients] = useState<Client[]>([]);
-  const [selectedClientId, setSelectedClientId] = useState<number | "">("");
+  const [selectedClientId, setSelectedClientId] = useState<string | "">("");
 
   // Supplier (defaults to Regan Industrial once clients load)
-  const [selectedSupplierId, setSelectedSupplierId] = useState<number | "">("");
+  const [selectedSupplierId, setSelectedSupplierId] = useState<string | "">("");
 
   // Client Warehouses (Ship To)
   const [clientWarehouses, setClientWarehouses] = useState<ClientWarehouse[]>([]);
-  const [selectedWarehouseId, setSelectedWarehouseId] = useState<number | "">("");
+  const [selectedWarehouseId, setSelectedWarehouseId] = useState<string | "">("");
   const [showNewWarehouse, setShowNewWarehouse] = useState(false);
   const [newWarehouse, setNewWarehouse] = useState({ name: "", address: "", city: "", contact_person: "", phone: "" });
   const [savingWarehouse, setSavingWarehouse] = useState(false);
 
   // Products
   const [products, setProducts] = useState<Product[]>([]);
-  const [marketPrices, setMarketPrices] = useState<Record<number, number>>({});
+  const [marketPrices, setMarketPrices] = useState<Record<string, number>>({});
 
   // Line item form — filters
-  const [selCategoryId, setSelCategoryId] = useState<number | "">("");
+  const [selCategoryId, setSelCategoryId] = useState<string | "">("");
   const [selProductType, setSelProductType] = useState("All");
   const [selSize, setSelSize] = useState("All");
   const [selThickness, setSelThickness] = useState("All");
-  const [selProductId, setSelProductId] = useState<number | "">("");
+  const [selProductId, setSelProductId] = useState<string | "">("");
   const [selQuantity, setSelQuantity] = useState<number | "">("");
   const [selPrice, setSelPrice] = useState<number | "">("");
 
@@ -159,7 +159,7 @@ function NewOrderForm() {
       setShowNewWarehouse(false);
       return;
     }
-    getClientWarehouses(selectedClientId as number).then((wh) => {
+    getClientWarehouses(selectedClientId as string).then((wh) => {
       const warehouses = wh as ClientWarehouse[];
       setClientWarehouses(warehouses);
       // Auto-select: if only one warehouse, or if there's a default, pick it
@@ -192,7 +192,7 @@ function NewOrderForm() {
       const regan = clientList.find((cl) => cl.name.toLowerCase().includes("regan"));
       if (regan) setSelectedSupplierId(regan.id);
 
-      const priceMap: Record<number, number> = {};
+      const priceMap: Record<string, number> = {};
       for (const p of prices) {
         if (p.category_id && p.price_per_kg) {
           priceMap[p.category_id] = Number(p.price_per_kg);
@@ -246,7 +246,7 @@ function NewOrderForm() {
 
   // ── Derived: categories list ──
   const categories = useMemo(() => {
-    const map = new Map<number, string>();
+    const map = new Map<string, string>();
     for (const p of products) {
       if (!map.has(p.category_id)) map.set(p.category_id, p.category_name);
     }
@@ -312,8 +312,8 @@ function NewOrderForm() {
 
   // Auto-fill price when category changes
   useEffect(() => {
-    if (selCategoryId && marketPrices[selCategoryId as number]) {
-      setSelPrice(marketPrices[selCategoryId as number]);
+    if (selCategoryId && marketPrices[selCategoryId as string]) {
+      setSelPrice(marketPrices[selCategoryId as string]);
     } else {
       setSelPrice("");
     }
@@ -321,7 +321,7 @@ function NewOrderForm() {
 
   // ── Reset cascade handlers ──
   // When editing, preserve quantity & price so the user doesn't lose them
-  function handleCategoryChange(val: number | "") {
+  function handleCategoryChange(val: string | "") {
     setSelCategoryId(val);
     setSelProductType("All");
     setSelSize("All");
@@ -645,7 +645,7 @@ function NewOrderForm() {
     // we CAN match by category + specs.
 
     // 4a: Find which category the text refers to
-    let matchedCatId: number | null = null;
+    let matchedCatId: string | null = null;
     for (const [catId, catName] of categories) {
       const catLower = catName.toLowerCase();
       const catSingular = catLower.replace(/s$/, "");
@@ -864,7 +864,7 @@ function NewOrderForm() {
       clientName: resolvedClientName,
       items: items.map((i) => ({
         ...i,
-        warehouse_id: 0,
+        warehouse_id: "",
         warehouse_name: "",
         classification: "c1",
       })),
@@ -880,7 +880,7 @@ function NewOrderForm() {
     if (items.length === 0) { setError("Add at least one item."); return; }
 
     if (!selectedClientId) { setError("Select a client."); return; }
-    const clientId = selectedClientId as number;
+    const clientId = selectedClientId as string;
 
     setSubmitting(true);
     try {
@@ -891,11 +891,11 @@ function NewOrderForm() {
         salesperson: salesperson.trim(),
         notes: notes.trim(),
         createdBy: createdByName,
-        clientWarehouseId: selectedWarehouseId ? (selectedWarehouseId as number) : null,
-        supplierId: selectedSupplierId ? (selectedSupplierId as number) : null,
+        clientWarehouseId: selectedWarehouseId || null,
+        supplierId: selectedSupplierId || null,
         items: items.map((i) => ({
           product_id: i.product_id,
-          warehouse_id: 0,
+          warehouse_id: "",
           classification: "c1",
           quantity: i.quantity,
           price_per_kg: i.price_per_kg,
@@ -951,7 +951,7 @@ function NewOrderForm() {
               <div className="px-4 py-3">
                 <select
                   value={selectedSupplierId}
-                  onChange={(e) => setSelectedSupplierId(e.target.value ? Number(e.target.value) : "")}
+                  onChange={(e) => setSelectedSupplierId(e.target.value)}
                   className="w-full py-2 text-sm cursor-pointer outline-none px-2"
                   style={{
                     color: "var(--foreground)",
@@ -1030,7 +1030,7 @@ function NewOrderForm() {
               <div className="px-4 py-3">
                 <select
                   value={selectedClientId}
-                  onChange={(e) => setSelectedClientId(e.target.value ? Number(e.target.value) : "")}
+                  onChange={(e) => setSelectedClientId(e.target.value)}
                   className="w-full py-2 text-sm cursor-pointer outline-none px-2"
                   style={{
                     color: "var(--foreground)",
@@ -1081,7 +1081,7 @@ function NewOrderForm() {
                   <div className="flex items-center gap-2">
                     <select
                       value={selectedWarehouseId}
-                      onChange={(e) => { setSelectedWarehouseId(e.target.value ? Number(e.target.value) : ""); setShowNewWarehouse(false); }}
+                      onChange={(e) => { setSelectedWarehouseId(e.target.value); setShowNewWarehouse(false); }}
                       className="flex-1 py-2 text-sm cursor-pointer outline-none px-2"
                       style={{
                         color: "var(--foreground)",
@@ -1186,7 +1186,7 @@ function NewOrderForm() {
                               try {
                                 const createdByName = user?.user_metadata?.full_name || user?.email || "Unknown";
                                 const created = await createClientWarehouse({
-                                  client_id: selectedClientId as number,
+                                  client_id: selectedClientId as string,
                                   name: newWarehouse.name.trim(),
                                   address: newWarehouse.address.trim() || undefined,
                                   city: newWarehouse.city.trim() || undefined,
@@ -1631,7 +1631,7 @@ function NewOrderForm() {
                       Product
                       {narrowedProducts.length > 0 && <span className="ml-1" style={{ color: "var(--accent)" }}>({narrowedProducts.length})</span>}
                     </label>
-                    <select value={selProductId} onChange={(e) => setSelProductId(e.target.value ? Number(e.target.value) : "")} className="w-full px-3 py-2.5 text-sm cursor-pointer" style={inputStyle}>
+                    <select value={selProductId} onChange={(e) => setSelProductId(e.target.value)} className="w-full px-3 py-2.5 text-sm cursor-pointer" style={inputStyle}>
                       <option value="">Select...</option>
                       {narrowedProducts.map((p) => <option key={p.id} value={p.id}>{p.sku} — {p.name}</option>)}
                     </select>

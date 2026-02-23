@@ -24,7 +24,20 @@
       "mcp__supabase__list_migrations",
       "mcp__supabase__list_extensions",
       "Bash(git -C \"C:/Users/Lenovo/Desktop/REGAN-ERP/REGAN-ERP\" ls-files --others --ignored --exclude-standard supabase/migrations/)",
-      "Bash(git -C \"C:/Users/Lenovo/Desktop/REGAN-ERP/REGAN-ERP\" ls-tree HEAD supabase/migrations/ --name-only)"
+      "Bash(git -C \"C:/Users/Lenovo/Desktop/REGAN-ERP/REGAN-ERP\" ls-tree HEAD supabase/migrations/ --name-only)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(ls:*)",
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(/c/Users/Lenovo/Desktop/regan-app/REGAN-ERP/transform_seed.mjs:*)",
+      "Bash(python3 -c:*)",
+      "Bash(node -e:*)",
+      "Bash(import { readFileSync, writeFileSync } from 'fs')",
+      "Bash(__NEW_LINE_ca3ca6ebe26045c7__ test line with single quotes 'hello')",
+      "Bash(HEREDOC_END)",
+      "Bash(echo:*)",
+      "Bash(node:*)"
     ]
   },
   "enableAllProjectMcpServers": true,

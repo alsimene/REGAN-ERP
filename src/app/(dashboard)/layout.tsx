@@ -108,8 +108,7 @@ const mainNavItems: NavEntry[] = [
     icon: icons.inventory,
     children: [
       { label: "Warehouse", href: "/inventory" },
-      { label: "Quick Search", href: "/inventory2" },
-      { label: "Products", href: "/inventory3" },
+      { label: "Product List", href: "/product-list" },
     ],
   },
 ];
@@ -124,8 +123,7 @@ const pageMeta: Record<string, { title: string; subtitle: string }> = {
   "/dashboard": { title: "Dashboard", subtitle: "Production Overview" },
   "/sales": { title: "Sales", subtitle: "Revenue & Transactions" },
   "/inventory": { title: "Warehouse", subtitle: "Stock Management" },
-  "/inventory2": { title: "Quick Search", subtitle: "Fast Product Lookup" },
-  "/inventory3": { title: "Products", subtitle: "Product Catalog" },
+  "/product-list": { title: "Product List", subtitle: "Register & Manage Products" },
   "/prices": { title: "Market Prices", subtitle: "Price Management" },
   "/orders": { title: "Orders", subtitle: "Order Management" },
   "/orders/new": { title: "New Order", subtitle: "Create Purchase Order" },

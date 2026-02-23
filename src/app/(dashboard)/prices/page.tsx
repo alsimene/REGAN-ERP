@@ -11,7 +11,7 @@ import { useAuth } from "@/app/context/AuthContext";
 import LoadingOverlay from "@/app/components/LoadingOverlay";
 
 type MarketPrice = {
-  category_id: number | null;
+  category_id: string | null;
   category_name: string | null;
   effective_date: string | null;
   price_per_kg: number | null;
@@ -19,7 +19,7 @@ type MarketPrice = {
 };
 
 type PriceHistoryRow = {
-  id: number;
+  id: string;
   category: string;
   price: number;
   date: string;
@@ -27,7 +27,7 @@ type PriceHistoryRow = {
   notes: string;
 };
 
-type Category = { id: number; name: string };
+type Category = { id: string; name: string };
 
 const inputStyle: React.CSSProperties = {
   backgroundColor: "var(--input-bg)",
@@ -50,7 +50,7 @@ export default function PricesPage() {
   const [loading, setLoading] = useState(true);
 
   // Form
-  const [formCategoryId, setFormCategoryId] = useState<number | "">("");
+  const [formCategoryId, setFormCategoryId] = useState<string | "">("");
   const [formPrice, setFormPrice] = useState<number | "">("");
   const [formNotes, setFormNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -84,7 +84,7 @@ export default function PricesPage() {
     setSubmitting(true);
     try {
       const userName = user?.user_metadata?.full_name || user?.email || "Unknown";
-      await updateMarketPrice(formCategoryId as number, Number(formPrice), formNotes || undefined, userName);
+      await updateMarketPrice(formCategoryId as string, Number(formPrice), formNotes || undefined, userName);
       setSuccess("Price updated successfully.");
       setFormCategoryId("");
       setFormPrice("");
@@ -124,7 +124,7 @@ export default function PricesPage() {
             <label className="block text-xs uppercase tracking-widest mb-1.5" style={labelStyle}>Category</label>
             <select
               value={formCategoryId}
-              onChange={(e) => setFormCategoryId(e.target.value ? Number(e.target.value) : "")}
+              onChange={(e) => setFormCategoryId(e.target.value)}
               className="w-full px-3 py-2 text-sm"
               style={inputStyle}
             >

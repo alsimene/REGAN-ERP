@@ -76,7 +76,7 @@ function formatDate(d: string | null) {
 }
 
 type OrderData = {
-  id: number;
+  id: string;
   order_number: string;
   order_date: string;
   status: string;
@@ -94,9 +94,9 @@ type OrderData = {
   rejection_notes: string | null;
   completed_at: string | null;
   completed_by: string | null;
-  supplier_id: number | null;
+  supplier_id: string | null;
   clients: {
-    id: number;
+    id: string;
     name: string;
     contact_person: string | null;
     email: string | null;
@@ -105,7 +105,7 @@ type OrderData = {
     city: string | null;
   } | null;
   supplier: {
-    id: number;
+    id: string;
     name: string;
     contact_person: string | null;
     email: string | null;
@@ -114,7 +114,7 @@ type OrderData = {
     city: string | null;
   } | null;
   client_warehouses: {
-    id: number;
+    id: string;
     name: string;
     address: string | null;
     city: string | null;
@@ -122,7 +122,7 @@ type OrderData = {
     phone: string | null;
   } | null;
   order_items: {
-    id: number;
+    id: string;
     quantity: number;
     delivered_qty: number;
     classification: string;
@@ -135,15 +135,15 @@ type OrderData = {
 };
 
 type DeliveryRecord = {
-  id: number;
+  id: string;
   processed_by: string | null;
   processed_by_name: string | null;
   notes: string | null;
   delivered_at: string;
   delivery_items: {
-    id: number;
+    id: string;
     qty: number;
-    order_item_id: number;
+    order_item_id: string;
     order_items: { products: { sku: string; name: string } | null } | null;
   }[];
 };
@@ -171,7 +171,7 @@ export default function OrderDetailPage() {
   const [historyModal, setHistoryModal] = useState(false);
   const [deliveryHistory, setDeliveryHistory] = useState<DeliveryRecord[]>([]);
   const [rejectionNotes, setRejectionNotes] = useState("");
-  const [editedPrices, setEditedPrices] = useState<Record<number, string>>({});
+  const [editedPrices, setEditedPrices] = useState<Record<string, string>>({});
   const [savingPrices, setSavingPrices] = useState(false);
   const [confirmModal, setConfirmModal] = useState<ConfirmState>({
     open: false,
@@ -331,10 +331,10 @@ export default function OrderDetailPage() {
     if (!order) return;
     const changes = Object.entries(editedPrices)
       .filter(([itemId, val]) => {
-        const orig = order.order_items.find((i) => i.id === Number(itemId));
+        const orig = order.order_items.find((i) => i.id === itemId);
         return orig && Number(val) !== Number(orig.price_per_kg) && Number(val) > 0;
       })
-      .map(([itemId, val]) => ({ item_id: Number(itemId), price_per_kg: Number(val) }));
+      .map(([itemId, val]) => ({ item_id: itemId, price_per_kg: Number(val) }));
 
     if (changes.length === 0) return;
 
@@ -355,7 +355,7 @@ export default function OrderDetailPage() {
     setDeliveryModal(true);
   }
 
-  async function handleSubmitDelivery(deliveries: { order_item_id: number; qty: number }[], notes: string) {
+  async function handleSubmitDelivery(deliveries: { order_item_id: string; qty: number }[], notes: string) {
     setSaving(true);
     try {
       const displayName = user?.user_metadata?.full_name || user?.email || "Unknown";
@@ -410,7 +410,7 @@ export default function OrderDetailPage() {
   // Price editing helpers
   const isPendingApproval = status === "pending_approval";
   const hasEditedPrices = Object.entries(editedPrices).some(([itemId, val]) => {
-    const orig = items.find((i) => i.id === Number(itemId));
+    const orig = items.find((i) => i.id === itemId);
     return orig && Number(val) !== Number(orig.price_per_kg) && val !== "";
   });
 

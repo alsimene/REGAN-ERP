@@ -3,15 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 
 type DeliveryRecord = {
-  id: number;
+  id: string;
   processed_by: string | null;
   processed_by_name: string | null;
   notes: string | null;
   delivered_at: string;
   delivery_items: {
-    id: number;
+    id: string;
     qty: number;
-    order_item_id: number;
+    order_item_id: string;
     order_items: { products: { sku: string; name: string } | null } | null;
   }[];
 };

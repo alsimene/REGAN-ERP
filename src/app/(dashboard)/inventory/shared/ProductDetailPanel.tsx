@@ -21,7 +21,7 @@ export default function ProductDetailPanel({ product, warehouses, movements, loa
   }
 
   return (
-    <div className="px-6 py-4animate-fade-up">
+    <div className="px-6 py-4 animate-fade-up">
       {/* Specs */}
       <div>
         <h4 className="text-[13px] font-medium uppercase tracking-widest mb-3" style={{ color: "var(--foreground)" }}>Specifications</h4>
@@ -33,7 +33,6 @@ export default function ProductDetailPanel({ product, warehouses, movements, loa
           {product.kgPerM !== null && product.kgPerM > 0 && <><span className="text-muted">Kg/m</span><span>{product.kgPerM.toFixed(3)}</span></>}
           {product.weightPerLength !== null && product.weightPerLength > 0 && <><span className="text-muted">Wt/pcs</span><span>{product.weightPerLength.toFixed(3)}</span></>}
           {product.weightPer20ft !== null && product.weightPer20ft > 0 && <><span className="text-muted">Wt/20ft</span><span>{product.weightPer20ft.toFixed(1)} kg</span></>}
-          <span className="text-muted">Capacity</span><span>{formatNumber(product.capacity)} {product.unit}</span>
         </div>
       </div>
 
@@ -52,6 +51,7 @@ export default function ProductDetailPanel({ product, warehouses, movements, loa
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border)" }}>
                 <th className="py-2 text-left text-[12px] uppercase tracking-widest text-muted">Warehouse</th>
+                <th className="py-2 text-left text-[12px] uppercase tracking-widest text-muted">Company</th>
                 <th className="py-2 text-right text-[12px] uppercase tracking-widest" style={{ color: classColor("C1") }}>C1</th>
                 <th className="py-2 text-right text-[12px] uppercase tracking-widest" style={{ color: classColor("C2") }}>C2</th>
                 <th className="py-2 text-right text-[12px] uppercase tracking-widest" style={{ color: classColor("C3") }}>C3</th>
@@ -62,6 +62,14 @@ export default function ProductDetailPanel({ product, warehouses, movements, loa
               {warehouses.map((wh) => (
                 <tr key={wh.warehouse} style={{ borderBottom: "1px solid var(--border)" }}>
                   <td className="py-2 text-muted">{wh.warehouse}</td>
+                  <td className="py-2">
+                    <span
+                      className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 font-medium"
+                      style={{ color: "var(--foreground)", backgroundColor: "var(--input-bg)", border: "1px solid var(--border)" }}
+                    >
+                      {wh.company}
+                    </span>
+                  </td>
                   <td className="py-2 text-right font-bold tabular-nums" style={{ color: classColor("C1") }}>{formatNumber(wh.c1)}</td>
                   <td className="py-2 text-right font-bold tabular-nums" style={{ color: classColor("C2") }}>{formatNumber(wh.c2)}</td>
                   <td className="py-2 text-right font-bold tabular-nums" style={{ color: classColor("C3") }}>{formatNumber(wh.c3)}</td>

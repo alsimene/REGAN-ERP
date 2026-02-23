@@ -94,6 +94,37 @@ export function thickColumnLabel(unit: SizeUnit): string {
   return "THICK (MM)";
 }
 
+/* ── Category alias map ── */
+const CATEGORY_ALIASES: Record<string, string> = {
+  "angle bar": "Angle Bars", "angle bars": "Angle Bars", "angle": "Angle Bars",
+  "channel bar": "Channel Bars", "channel bars": "Channel Bars", "channel": "Channel Bars",
+  "c-channel": "Channel Bars",
+  "deformed bar": "Deformed Bars", "deformed bars": "Deformed Bars",
+  "deformed": "Deformed Bars", "rebar": "Deformed Bars",
+  "flat bar": "Flat Bars", "flat bars": "Flat Bars", "flat": "Flat Bars",
+  "gi pipe": "Pipes", "bi pipe": "Pipes", "pipe": "Pipes", "pipes": "Pipes",
+  "square tube": "Tubings", "rect tube": "Tubings",
+  "tube": "Tubings", "tubing": "Tubings", "tubings": "Tubings",
+  "ms plate": "Plates", "checkered plate": "Plates",
+  "plate": "Plates", "plates": "Plates",
+  "wide flange": "Wide Flanges", "wide flanges": "Wide Flanges", "flange": "Wide Flanges",
+  "c-purlin": "Purlins", "purlin": "Purlins", "purlins": "Purlins",
+  "ab": "Angle Bars", "ua": "Angle Bars",
+  "cb": "Channel Bars",
+  "db": "Deformed Bars",
+  "fb": "Flat Bars",
+  "pi": "Pipes",
+  "tu": "Tubings",
+  "pl": "Plates",
+  "wf": "Wide Flanges",
+  "cp": "Purlins",
+};
+
+const ALIAS_KEYS = Object.keys(CATEGORY_ALIASES).sort((a, b) => b.length - a.length);
+
+// Part pattern: decimals (75.5), fractions (1/8), mixed fractions (1-3/8)
+const PART = String.raw`\d+(?:\.\d+|(?:-\d+)?/\d+)?`;
+
 /* ── Search ── */
 export function buildSearchIndex(p: { sku: string; name: string; category: string; sizeMm: string | null; sizeInch: string | null; thicknessMm: string | null }): string {
   return [p.sku, p.name, p.category, p.sizeMm ?? "", p.sizeInch ?? "", p.thicknessMm ?? ""]
@@ -101,35 +132,66 @@ export function buildSearchIndex(p: { sku: string; name: string; category: strin
     .toLowerCase();
 }
 
-export function parseSearchTokens(query: string): { dims: string[]; words: string[] } {
+export function parseSearchTokens(query: string): { category: string | null; dims: string[]; partialDims: string[]; words: string[] } {
   let q = query.toLowerCase().trim();
-  if (!q) return { dims: [], words: [] };
-  // Normalize "50x75" / "50X75" / "50×75" → "50 x 75"
-  q = q.replace(/(\d+(?:\.\d+)?)\s*[xX×]\s*(\d+(?:\.\d+)?)/g, "$1 x $2");
+  if (!q) return { category: null, dims: [], partialDims: [], words: [] };
 
-  // Extract dimension patterns as single tokens (e.g. "20 x 20")
+  // 1. Try longest alias match first (greedy)
+  let category: string | null = null;
+  for (const alias of ALIAS_KEYS) {
+    if (q === alias || q.startsWith(alias + " ")) {
+      category = CATEGORY_ALIASES[alias];
+      q = q.slice(alias.length).trim();
+      break;
+    }
+  }
+
   const dims: string[] = [];
-  const remaining = q.replace(/\d+(?:\.\d+)? x \d+(?:\.\d+)?/g, (m) => { dims.push(m); return " "; });
+  const partialDims: string[] = [];
 
-  // Split remaining into word tokens
-  const words = remaining.split(/\s+/).filter(Boolean);
-  return { dims, words };
+  // 2. Three-part dimensions: "75x75x6.0" → dim "75 x 75" + thickness word "6.0"
+  const re3 = new RegExp(`(${PART})\\s*[xX×]\\s*(${PART})\\s*[xX×]\\s*(${PART})`, "g");
+  q = q.replace(re3, (_, a, b, c) => { dims.push(`${a} x ${b}`); return ` ${c} `; });
+
+  // 3. Two-part dimensions: "50x75", "3x1-3/8", "1/8x1"
+  const re2 = new RegExp(`(${PART})\\s*[xX×]\\s*(${PART})`, "g");
+  q = q.replace(re2, "$1 x $2");
+  const reDim = new RegExp(`${PART} x ${PART}`, "g");
+  q = q.replace(reDim, (m) => { dims.push(m); return " "; });
+
+  // 4. Partial dimensions: "75x" or "75 x" (number followed by x with nothing after)
+  const rePartial = new RegExp(`(${PART})\\s*[xX×]\\s*$`);
+  const partialMatch = q.match(rePartial);
+  if (partialMatch) {
+    partialDims.push(`${partialMatch[1]} x `);
+    q = q.replace(rePartial, " ");
+  }
+
+  const words = q.split(/\s+/).filter(Boolean);
+  return { category, dims, partialDims, words };
 }
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-export function matchesSearch(idx: string, dims: string[], words: string[]): boolean {
+export function matchesSearch(idx: string, dims: string[], words: string[], partialDims: string[] = []): boolean {
   // Dimension tokens: exact substring match ("20 x 20" must appear literally)
   for (const d of dims) {
     if (!idx.includes(d)) return false;
   }
-  // Word tokens: word-boundary matching
+  // Partial dimension tokens: prefix match ("75 x " matches "75 x 75", "75 x 50", etc.)
+  for (const pd of partialDims) {
+    if (!idx.includes(pd)) return false;
+  }
+  // Word tokens: boundary matching
   for (const t of words) {
     const escaped = escapeRe(t);
-    // Numeric tokens (e.g. "2.0", "16") use boundaries on both sides to prevent "20" matching "200"
-    // Text tokens (e.g. "bar") use start boundary only so "bar" matches "bars"
+    // Numeric tokens use strict boundaries to prevent:
+    //   "3" matching inside "3.75" (dot boundary) or "1-3/8" (fraction)
+    // Text tokens use start boundary only so "bar" matches "bars"
     const isNumeric = /^\d+(\.\d+)?$/.test(t);
-    const pattern = isNumeric ? `\\b${escaped}\\b` : `\\b${escaped}`;
+    const pattern = isNumeric
+      ? `(?<![\\d.])${escaped}(?![\\d./])`
+      : `\\b${escaped}`;
     if (!new RegExp(pattern).test(idx)) return false;
   }
   return true;
@@ -139,3 +201,4 @@ export function matchesSearch(idx: string, dims: string[], words: string[]): boo
 export function formatNumber(n: number): string {
   return n.toLocaleString();
 }
+

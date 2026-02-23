@@ -1,10 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import type { ProductSummary, SortKey, SortDir, SizeUnit, ColumnDef } from "../../types";
+import type { ProductSummary, SortKey, SortDir, SizeUnit } from "../../types";
 import { useProductDetail } from "../../hooks/useInventoryData";
-import ProToolbar from "./ProToolbar";
-import ProTable from "./ProTable";
+import ProductTable from "./ProductTable";
 import ProductDetailModal from "../../shared/ProductDetailModal";
 import Pagination from "../../shared/Pagination";
 
@@ -12,44 +11,25 @@ interface Props {
   products: ProductSummary[];
   allProducts: ProductSummary[];
   totalAll: number;
+  filteredCount: number;
   sortKey: SortKey;
   sortDir: SortDir;
   onSort: (key: SortKey) => void;
   sizeUnit: SizeUnit;
-  onSizeUnitChange: (unit: SizeUnit) => void;
   hiddenColumns: Set<string>;
-  onToggleColumn: (key: string) => void;
   currentPage: number;
   totalPages: number;
   onPrev: () => void;
   onNext: () => void;
   startIndex: number;
-  searchQuery: string;
-  onSearchChange: (q: string) => void;
 }
 
-const columnDefs: ColumnDef[] = [
-  { key: "category", label: "Category" },
-  { key: "sizeMm", label: "Size" },
-  { key: "thicknessMm", label: "Thickness" },
-  { key: "flangeThicknessMm", label: "Flange" },
-  { key: "lengthM", label: "Length" },
-  { key: "kgPerM", label: "Kg/m" },
-  { key: "weightPerLength", label: "Wt/pcs" },
-  { key: "weightPer20ft", label: "Wt/20ft" },
-  { key: "c1", label: "C1" },
-  { key: "c2", label: "C2" },
-  { key: "c3", label: "C3" },
-  { key: "totalStock", label: "Total" },
-];
-
-export default function ProTableView({
-  products, allProducts, totalAll, sortKey, sortDir, onSort,
-  sizeUnit, onSizeUnitChange, hiddenColumns, onToggleColumn,
+export default function ProductTableView({
+  products, allProducts, totalAll, filteredCount, sortKey, sortDir, onSort,
+  sizeUnit, hiddenColumns,
   currentPage, totalPages, onPrev, onNext, startIndex,
-  searchQuery, onSearchChange,
 }: Props) {
-  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const { warehouses, movements, loading: detailLoading } = useProductDetail(selectedId);
   const selectedProduct = useMemo(
     () => allProducts.find((p) => p.productId === selectedId) ?? null,
@@ -58,16 +38,7 @@ export default function ProTableView({
 
   return (
     <>
-      <ProToolbar
-        sizeUnit={sizeUnit}
-        onSizeUnitChange={onSizeUnitChange}
-        columns={columnDefs}
-        hiddenColumns={hiddenColumns}
-        onToggleColumn={onToggleColumn}
-        searchQuery={searchQuery}
-        onSearchChange={onSearchChange}
-      />
-      <ProTable
+      <ProductTable
         products={products}
         sortKey={sortKey}
         sortDir={sortDir}
@@ -75,8 +46,9 @@ export default function ProTableView({
         sizeUnit={sizeUnit}
         hiddenColumns={hiddenColumns}
         startIndex={startIndex}
-        selectedId={selectedId}
-        onSelectProduct={setSelectedId}
+        onSelectProduct={(id) => setSelectedId(selectedId === id ? null : id)}
+        filteredCount={filteredCount}
+        totalAll={totalAll}
       />
       <Pagination
         currentPage={currentPage}
