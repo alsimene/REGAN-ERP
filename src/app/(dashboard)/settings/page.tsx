@@ -290,7 +290,7 @@ export default function SettingsPage() {
 
       {/* ── PROFILE SECTION ── */}
       <Section icon={icons.user} title="Profile">
-        <div className="flex items-start gap-6">
+        <div className="flex flex-col sm:flex-row items-start gap-6">
           {/* Avatar */}
           <div className="flex flex-col items-center gap-2 shrink-0">
             <div

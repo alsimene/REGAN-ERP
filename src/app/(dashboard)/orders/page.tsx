@@ -200,16 +200,15 @@ export default function OrdersPage() {
             <h3 className="font-[family-name:var(--font-display)] text-sm uppercase tracking-wider text-foreground">
               {activeFilter === "All" ? "All Orders" : activeFilter === "Drafts" ? "Drafts" : `${activeFilter} Orders`}
             </h3>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               {/* Search */}
               {activeFilter !== "Drafts" && (
                 <div
-                  className="flex items-center gap-1.5 px-3 py-2"
+                  className="flex items-center gap-1.5 px-3 py-2 w-full sm:w-56"
                   style={{
                     border: "1px solid var(--border)",
                     backgroundColor: "var(--background)",
                     transition: "border-color 0.2s ease",
-                    minWidth: 220,
                   }}
                 >
                   <span className="text-muted shrink-0">{icons.search}</span>

@@ -803,9 +803,9 @@ export default function OpportunitiesPage() {
             {icons.gear} Stages
           </button>
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-1.5 px-3 py-2"
-            style={{ border: "1px solid var(--border)", backgroundColor: "var(--background)", minWidth: 200 }}>
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-1.5 px-3 py-2 w-full sm:w-56"
+            style={{ border: "1px solid var(--border)", backgroundColor: "var(--background)" }}>
             <span className="text-muted shrink-0">{icons.search}</span>
             <input ref={searchRef} type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search deals..." className="bg-transparent outline-none text-sm w-full"
@@ -842,9 +842,8 @@ export default function OpportunitiesPage() {
             return (
               <div
                 key={stage.key}
-                className="flex-shrink-0 flex flex-col"
+                className="flex-shrink-0 flex flex-col w-[75vw] sm:w-[280px]"
                 style={{
-                  width: 280,
                   position: "relative",
                   backgroundColor: isDragOver ? "var(--row-hover)" : "var(--input-bg)",
                   border: isDragOver ? "1px dashed var(--accent)" : "1px solid var(--border)",
@@ -1075,7 +1074,7 @@ export default function OpportunitiesPage() {
             </div>
             <div className="px-6 py-5 space-y-4">
               <Field label="Deal Name *" value={formName} onChange={setFormName} placeholder="Q1 Bulk Order" />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Amount (₱)" value={formAmount} onChange={setFormAmount} type="number" placeholder="2500000" />
                 <div>
                   <label className="block text-[10px] uppercase tracking-widest mb-1.5" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>Stage</label>
@@ -1086,7 +1085,7 @@ export default function OpportunitiesPage() {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Close Date" value={formCloseDate} onChange={setFormCloseDate} type="date" />
                 <Field label="Probability (%)" value={formProbability} onChange={setFormProbability} type="number" placeholder="50" />
               </div>
@@ -1212,7 +1211,7 @@ export default function OpportunitiesPage() {
          ════════════════════════════════════════ */}
       {detailOpp && editForm && (
         <div className="fixed inset-0 z-50 flex justify-end" style={{ backgroundColor: "rgba(0,0,0,0.35)", backdropFilter: "blur(2px)" }} onClick={() => requestDismiss(dismissDetail, isEditDirty())}>
-          <div className="w-full max-w-xl h-full overflow-y-auto"
+          <div className="w-full sm:max-w-xl h-full overflow-y-auto"
             style={{ backgroundColor: "var(--background)", borderLeft: "1px solid var(--border)", boxShadow: "-8px 0 30px rgba(0,0,0,0.2)", animation: "slideInRight 0.3s ease-out" }}
             onClick={(e) => e.stopPropagation()}>
             <div className="px-6 py-4 flex items-center justify-between sticky top-0 z-10"
@@ -1245,7 +1244,7 @@ export default function OpportunitiesPage() {
 
             <div className="px-6 py-5 space-y-4">
               <Field label="Deal Name" value={editForm.name} onChange={(v) => setEditForm({ ...editForm, name: v })} />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Amount (₱)" value={editForm.amount.toString()} onChange={(v) => setEditForm({ ...editForm, amount: parseFloat(v) || 0 })} type="number" />
                 <div>
                   <label className="block text-[10px] uppercase tracking-widest mb-1.5" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>Stage</label>
@@ -1260,7 +1259,7 @@ export default function OpportunitiesPage() {
                   </select>
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Close Date" value={editForm.close_date} onChange={(v) => setEditForm({ ...editForm, close_date: v })} type="date" />
                 <Field label="Probability (%)" value={editForm.probability.toString()} onChange={(v) => setEditForm({ ...editForm, probability: parseInt(v) || 0 })} type="number" />
               </div>
@@ -2260,7 +2259,7 @@ export default function OpportunitiesPage() {
          ════════════════════════════════════════ */}
       {showManageStages && (
         <div className="fixed inset-0 z-50 flex justify-end" style={{ backgroundColor: "rgba(0,0,0,0.35)", backdropFilter: "blur(2px)" }} onClick={() => setShowManageStages(false)}>
-          <div className="w-full max-w-md h-full overflow-y-auto"
+          <div className="w-full sm:max-w-md h-full overflow-y-auto"
             style={{ backgroundColor: "var(--background)", borderLeft: "1px solid var(--border)", boxShadow: "-8px 0 30px rgba(0,0,0,0.2)", animation: "slideInRight 0.3s ease-out" }}
             onClick={(e) => e.stopPropagation()}>
             {/* Header */}

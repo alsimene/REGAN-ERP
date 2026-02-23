@@ -164,7 +164,7 @@ function NavLink({ item, pathname, indent }: { item: { label: string; icon?: Rea
   if (item.comingSoon) {
     return (
       <div
-        className={`w-full flex items-center gap-3 ${indent ? "pl-10 pr-3 py-2" : "px-3 py-2.5"} text-sm uppercase tracking-wider`}
+        className={`w-full flex items-center gap-2.5 ${indent ? "pl-10 pr-3 py-1.5" : "px-3 py-2"} text-sm uppercase tracking-wider`}
         style={{
           color: "var(--panel-text-sub)",
           opacity: 0.5,
@@ -195,7 +195,7 @@ function NavLink({ item, pathname, indent }: { item: { label: string; icon?: Rea
   return (
     <Link
       href={item.href}
-      className={`w-full flex items-center gap-3 ${indent ? "pl-10 pr-3 py-2" : "px-3 py-2.5"} text-sm uppercase tracking-wider cursor-pointer`}
+      className={`w-full flex items-center gap-2.5 ${indent ? "pl-10 pr-3 py-1.5" : "px-3 py-2"} text-sm uppercase tracking-wider cursor-pointer`}
       style={{
         color: isActive ? "var(--panel-accent)" : "var(--panel-text-sub)",
         backgroundColor: isActive ? "var(--panel-content-bg)" : "transparent",
@@ -238,7 +238,7 @@ function NavGroup({ item, pathname }: { item: NavGroupItem; pathname: string }) 
     <div>
       <button
         onClick={() => setOpen((prev) => !prev)}
-        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm uppercase tracking-wider cursor-pointer"
+        className="w-full flex items-center gap-2.5 px-3 py-2 text-sm uppercase tracking-wider cursor-pointer"
         style={{
           color: hasActiveChild ? "var(--panel-accent)" : "var(--panel-text-sub)",
           backgroundColor: "transparent",
@@ -368,7 +368,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         />
 
         {/* Logo + mobile close */}
-        <div className="px-6 pt-8 pb-6 flex items-start justify-between">
+        <div className="px-6 pt-6 pb-4 flex items-start justify-between">
           <div>
             <h1
               className="font-[family-name:var(--font-display)] text-2xl uppercase tracking-wider"
@@ -400,7 +400,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         {/* Nav — Main */}
-        <nav className="flex-1 px-3 overflow-y-auto">
+        <nav className="flex-1 px-3 overflow-y-auto scrollbar-hide">
           <div className="mb-1">
             <span
               className="block px-3 py-1.5 text-[9px] uppercase tracking-[0.2em]"
@@ -420,7 +420,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           {/* Divider */}
-          <div className="my-3 mx-3 h-px" style={{ backgroundColor: "var(--steel-line)" }} />
+          <div className="my-2 mx-3 h-px" style={{ backgroundColor: "var(--steel-line)" }} />
 
           {/* Nav — Management */}
           <div className="mb-1">
@@ -438,7 +438,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           {/* Divider */}
-          <div className="my-3 mx-3 h-px" style={{ backgroundColor: "var(--steel-line)" }} />
+          <div className="my-2 mx-3 h-px" style={{ backgroundColor: "var(--steel-line)" }} />
 
           {/* Nav — CRM */}
           <div className="mb-1">
@@ -460,7 +460,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
 
           {/* Divider */}
-          <div className="my-3 mx-3 h-px" style={{ backgroundColor: "var(--steel-line)" }} />
+          <div className="my-2 mx-3 h-px" style={{ backgroundColor: "var(--steel-line)" }} />
 
           {/* Nav — System */}
           <div className="mb-1">
@@ -478,14 +478,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         {/* ── User profile at bottom ── */}
         <div
-          className="px-3 pb-4 pt-2"
+          className="px-3 pb-3 pt-2"
           style={{ borderTop: "1px solid var(--steel-line)" }}
         >
           {/* Theme toggle */}
           {isClient && mounted && (
             <button
               onClick={toggleTheme}
-              className="w-full flex items-center gap-3 px-3 py-2 text-sm uppercase tracking-wider cursor-pointer mb-2"
+              className="w-full flex items-center gap-2.5 px-3 py-2 text-sm uppercase tracking-wider cursor-pointer mb-1"
               style={{
                 color: "var(--panel-text-sub)",
                 fontFamily: "var(--font-body)",

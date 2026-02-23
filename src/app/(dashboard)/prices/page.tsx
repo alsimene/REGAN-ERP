@@ -119,7 +119,7 @@ export default function PricesPage() {
           Update Price
         </h3>
 
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
           <div>
             <label className="block text-xs uppercase tracking-widest mb-1.5" style={labelStyle}>Category</label>
             <select

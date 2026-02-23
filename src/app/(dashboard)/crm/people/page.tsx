@@ -429,7 +429,7 @@ export default function PeoplePage() {
               All People
               <span className="ml-2 text-xs" style={{ color: "var(--muted)" }}>({filtered.length})</span>
             </h3>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               {/* Bulk delete */}
               {selectedIds.size > 0 && (
                 <button
@@ -450,12 +450,11 @@ export default function PeoplePage() {
               )}
               {/* Search */}
               <div
-                className="flex items-center gap-1.5 px-3 py-2"
+                className="flex items-center gap-1.5 px-3 py-2 w-full sm:w-56"
                 style={{
                   border: "1px solid var(--border)",
                   backgroundColor: "var(--background)",
                   transition: "border-color 0.2s ease",
-                  minWidth: 220,
                 }}
               >
                 <span className="text-muted shrink-0">{icons.search}</span>
@@ -704,15 +703,15 @@ export default function PeoplePage() {
 
             {/* Form */}
             <div className="px-6 py-5 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="First Name *" value={form.first_name} onChange={(v) => setForm({ ...form, first_name: v })} placeholder="Carlos" />
                 <Field label="Last Name *" value={form.last_name} onChange={(v) => setForm({ ...form, last_name: v })} placeholder="Reyes" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} type="email" placeholder="carlos@company.ph" />
                 <Field label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+63 917 555 1234" />
               </div>
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Job Title" value={form.job_title} onChange={(v) => setForm({ ...form, job_title: v })} placeholder="Procurement Manager" />
                 <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} placeholder="Makati" />
               </div>
@@ -791,7 +790,7 @@ export default function PeoplePage() {
           onClick={() => requestDismiss(dismissDetail, isEditDirty())}
         >
           <div
-            className="w-full max-w-xl h-full overflow-y-auto"
+            className="w-full sm:max-w-xl h-full overflow-y-auto"
             style={{
               backgroundColor: "var(--background)",
               borderLeft: "1px solid var(--border)",
@@ -847,7 +846,7 @@ export default function PeoplePage() {
 
             {/* Detail fields */}
             <div className="px-6 py-5 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="First Name" value={editForm.first_name} onChange={(v) => setEditForm({ ...editForm, first_name: v })} />
                 <Field label="Last Name" value={editForm.last_name} onChange={(v) => setEditForm({ ...editForm, last_name: v })} />
               </div>

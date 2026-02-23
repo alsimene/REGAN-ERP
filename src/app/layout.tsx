@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Oswald, Barlow } from "next/font/google";
 import "./globals.css";
 import Providers from "@/app/components/Providers";
@@ -18,6 +18,12 @@ const barlow = Barlow({
 export const metadata: Metadata = {
   title: "Regan",
   description: "Forged in steel. Built to last.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({

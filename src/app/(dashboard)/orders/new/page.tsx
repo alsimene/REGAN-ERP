@@ -1594,7 +1594,7 @@ function NewOrderForm() {
         <div className="fixed inset-0 z-50 flex items-center justify-center"
           style={{ backgroundColor: "rgba(0,0,0,0.5)", backdropFilter: "blur(2px)" }}
           onClick={() => setShowQuotImport(false)}>
-          <div className="w-full max-w-md mx-4 animate-fade-up outline-none"
+          <div className="w-full max-w-md mx-4 animate-fade-up outline-none max-h-[90vh] overflow-y-auto"
             style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--border)", boxShadow: "0 8px 32px rgba(0,0,0,0.2)" }}
             onClick={(e) => e.stopPropagation()}>
             <div className="px-6 pt-5 pb-4">
@@ -1858,7 +1858,7 @@ function NewOrderForm() {
           onClick={() => setUploadResult(null)}
         >
           <div
-            className="w-full max-w-lg mx-4 animate-fade-up"
+            className="w-full max-w-lg mx-4 animate-fade-up max-h-[90vh] overflow-y-auto"
             style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--border)", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -1958,7 +1958,7 @@ function NewOrderForm() {
           onClick={() => setExtractionResult(null)}
         >
           <div
-            className="w-full max-w-lg mx-4 animate-fade-up"
+            className="w-full max-w-lg mx-4 animate-fade-up max-h-[90vh] overflow-y-auto"
             style={{ backgroundColor: "var(--input-bg)", border: "1px solid var(--border)", boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2)" }}
             onClick={(e) => e.stopPropagation()}
           >

@@ -420,7 +420,7 @@ export default function CompaniesPage() {
             <h3 className="font-[family-name:var(--font-display)] text-sm uppercase tracking-wider text-foreground">
               All Companies <span className="ml-2 text-xs" style={{ color: "var(--muted)" }}>({filtered.length})</span>
             </h3>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               {selectedIds.size > 0 && (
                 <button onClick={handleBulkDelete} className="inline-flex items-center gap-1.5 px-3 py-2 text-[11px] uppercase tracking-wider cursor-pointer"
                   style={{ backgroundColor: "var(--accent)", color: "#fff", fontFamily: "var(--font-body)", transition: "opacity 0.3s" }}
@@ -428,8 +428,8 @@ export default function CompaniesPage() {
                   {icons.trash} Delete ({selectedIds.size})
                 </button>
               )}
-              <div className="flex items-center gap-1.5 px-3 py-2"
-                style={{ border: "1px solid var(--border)", backgroundColor: "var(--background)", minWidth: 220 }}>
+              <div className="flex items-center gap-1.5 px-3 py-2 w-full sm:w-56"
+                style={{ border: "1px solid var(--border)", backgroundColor: "var(--background)" }}>
                 <span className="text-muted shrink-0">{icons.search}</span>
                 <input ref={searchRef} type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search companies..."
                   className="bg-transparent outline-none text-sm w-full" style={{ color: "var(--foreground)", fontFamily: "var(--font-body)" }} />
@@ -592,12 +592,12 @@ export default function CompaniesPage() {
             </div>
             <div className="px-6 py-5 space-y-4">
               <Field label="Company Name *" value={form.name} onChange={(v) => setForm({ ...form, name: v })} placeholder="Manila Steel Corp" />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Domain" value={form.domain} onChange={(v) => setForm({ ...form, domain: v })} placeholder="manilasteel.ph" />
                 <Field label="Industry" value={form.industry} onChange={(v) => setForm({ ...form, industry: v })} placeholder="Steel Manufacturing" />
               </div>
               <Field label="Annual Revenue (₱)" value={form.annual_revenue?.toString() ?? ""} onChange={(v) => setForm({ ...form, annual_revenue: v ? parseInt(v) || null : null })} type="number" placeholder="85000000" />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Credit Limit (₱)" value={form.credit_limit?.toString() ?? ""} onChange={(v) => setForm({ ...form, credit_limit: v ? parseInt(v) || null : null })} type="number" placeholder="10000000" />
                 <div>
                   <label className="block text-[10px] uppercase tracking-widest mb-1.5" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>Payment Terms</label>
@@ -621,12 +621,12 @@ export default function CompaniesPage() {
               {form.payment_terms !== null && !TERMS_OPTIONS.includes(form.payment_terms ?? "") && form.payment_terms !== null && (
                 <Field label="Custom Payment Terms" value={form.payment_terms ?? ""} onChange={(v) => setForm({ ...form, payment_terms: v })} placeholder="e.g. 2/10 Net 30" />
               )}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Phone" value={form.phone} onChange={(v) => setForm({ ...form, phone: v })} placeholder="+63 2 8555 1234" />
                 <Field label="Email" value={form.email} onChange={(v) => setForm({ ...form, email: v })} type="email" placeholder="info@company.ph" />
               </div>
               <Field label="Address" value={form.address} onChange={(v) => setForm({ ...form, address: v })} placeholder="123 Industrial Blvd" />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="City" value={form.city} onChange={(v) => setForm({ ...form, city: v })} placeholder="Makati" />
                 <Field label="Country" value={form.country} onChange={(v) => setForm({ ...form, country: v })} placeholder="Philippines" />
               </div>
@@ -662,7 +662,7 @@ export default function CompaniesPage() {
       {/* ── DETAIL PANEL ── */}
       {detailCompany && editForm && (
         <div className="fixed inset-0 z-50 flex justify-end" style={{ backgroundColor: "rgba(0,0,0,0.35)", backdropFilter: "blur(2px)" }} onClick={() => requestDismiss(dismissDetail, isEditDirty())}>
-          <div className="w-full max-w-xl h-full overflow-y-auto"
+          <div className="w-full sm:max-w-xl h-full overflow-y-auto"
             style={{ backgroundColor: "var(--background)", borderLeft: "1px solid var(--border)", boxShadow: "-8px 0 30px rgba(0,0,0,0.2)", animation: "slideInRight 0.3s ease-out" }}
             onClick={(e) => e.stopPropagation()}>
             {/* Header */}
@@ -694,7 +694,7 @@ export default function CompaniesPage() {
 
             <div className="px-6 py-5 space-y-4">
               <Field label="Company Name" value={editForm.name} onChange={(v) => setEditForm({ ...editForm, name: v })} />
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Domain" value={editForm.domain} onChange={(v) => setEditForm({ ...editForm, domain: v })} />
                 <Field label="Industry" value={editForm.industry} onChange={(v) => setEditForm({ ...editForm, industry: v })} />
               </div>
@@ -731,7 +731,7 @@ export default function CompaniesPage() {
 
               <Field label="Annual Revenue (₱)" value={editForm.annual_revenue?.toString() ?? ""} onChange={(v) => setEditForm({ ...editForm, annual_revenue: v ? parseInt(v) || null : null })} type="number" />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Credit Limit (₱)" value={editForm.credit_limit?.toString() ?? ""} onChange={(v) => setEditForm({ ...editForm, credit_limit: v ? parseInt(v) || null : null })} type="number" />
                 <div>
                   <label className="block text-[10px] uppercase tracking-widest mb-1.5" style={{ color: "var(--muted)", fontFamily: "var(--font-body)" }}>Payment Terms</label>

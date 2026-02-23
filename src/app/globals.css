@@ -122,6 +122,15 @@ body {
   transition: background-color 0.4s ease, color 0.4s ease;
 }
 
+/* Hide scrollbar but keep scroll functionality */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 select,
 select option {
   background-color: var(--background);
